@@ -30,6 +30,7 @@ import java.util.Objects;
 import com.jmethods.catatumbo.entities.Address;
 import com.jmethods.catatumbo.entities.GenericEntity;
 import com.jmethods.catatumbo.entities.GenericParameterizedType;
+import com.jmethods.catatumbo.entities.ZipCodeWrapper;
 import org.junit.Test;
 
 import com.jmethods.catatumbo.EntityManagerException;
@@ -186,6 +187,12 @@ public class EntityIntrospectorTest {
     EntityMetadata entityMetadata = EntityIntrospector.introspect(TaskName.class);
     assertEquals("Task", entityMetadata.getKind());
     assertEquals(1, entityMetadata.getPropertyMetadataCollection().size());
+  }
+
+  @Test
+  public void testIntrospect_ZipCodeWrapper() {
+    EntityMetadata entityMetadata = EntityIntrospector.introspect(ZipCodeWrapper.class);
+    assertEquals("wrapped", entityMetadata.getKind());
   }
 
   @Test(expected = EntityManagerException.class)
