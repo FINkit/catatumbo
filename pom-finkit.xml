@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>io.finkit</groupId>
-		<artifactId>catatumbo-parent</artifactId>
+		<artifactId>finkit-catatumbo</artifactId>
 		<version>23.1.0-SNAPSHOT</version>
 	</parent>
 	<artifactId>catatumbo</artifactId>
