@@ -172,6 +172,16 @@ public class EntityMetadata extends MetadataBase {
   }
 
   /**
+   * Sets the metadata Kind.
+   *
+   * @param kind
+   *        entity kind parameter
+   */
+  public void setKind(String kind) {
+    this.kind = kind;
+  }
+
+  /**
    * Returns the metadata of the identifier.
    *
    * @return the metadata of the identifier.
