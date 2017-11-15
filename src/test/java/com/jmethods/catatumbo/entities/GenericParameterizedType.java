@@ -13,28 +13,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.jmethods.catatumbo.entities;
 
-package com.jmethods.catatumbo.impl;
-
-import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.List;
 
 /**
- * Objects of this class contain the metadata about an entity's full key.
+ * @author Aurelien Thieriot
  * 
- * @author Sai Pullabhotla
  */
-public class KeyMetadata extends FieldMetadata {
+public class GenericParameterizedType implements ParameterizedType {
 
-  /**
-   * Creates a new instance of <code>KeyMetadata</code>.
-   * 
-   * @param field
-   *          the field.
-   * @param type
-   *          the field Type.
-   */
-  public KeyMetadata(Field field, Class<?> type) {
-    super(field, type);
+  private Type[] types;
+
+  public GenericParameterizedType(Type[] types) {
+    this.types = types;
   }
 
+  @Override
+  public Type[] getActualTypeArguments() {
+    return types;
+  }
+
+  @Override
+  public Type getRawType() {
+    return GenericEntity.class;
+  }
+
+  @Override
+  public Type getOwnerType() {
+    return null;
+  }
 }

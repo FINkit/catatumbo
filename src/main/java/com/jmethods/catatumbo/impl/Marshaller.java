@@ -16,6 +16,7 @@
 
 package com.jmethods.catatumbo.impl;
 
+import java.lang.reflect.Type;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -166,11 +167,12 @@ public class Marshaller {
    * @param intent
    *          the intent of marshalling
    */
-  private Marshaller(DefaultEntityManager entityManager, Object entity, Intent intent) {
+  private Marshaller(DefaultEntityManager entityManager, Object entity, Intent intent,
+                     Type entityType) {
     this.entityManager = entityManager;
     this.entity = entity;
     this.intent = intent;
-    entityMetadata = EntityIntrospector.introspect(entity.getClass());
+    entityMetadata = EntityIntrospector.introspect(entity, entityType);
     validateIntent();
   }
 
@@ -200,12 +202,35 @@ public class Marshaller {
    *          the purpose. For example, if the purpose if INSERT or UPSERT, the marshaller would
    *          auto generate any keys. Where as if the purpose is UPDATE, then then marshaller will
    *          NOT generate any keys.
+   * @param entityType
+   *          the entity type
+   * @return the marshaled object
+   */
+  @SuppressWarnings("rawtypes")
+  public static BaseEntity marshal(DefaultEntityManager entityManager, Object entity, Intent intent,
+                                   Type entityType) {
+    Marshaller marshaller = new Marshaller(entityManager, entity, intent, entityType);
+    return marshaller.marshal();
+  }
+
+  /**
+   * Marshals the given entity (POJO) into the format needed for the low level Cloud Datastore API.
+   *
+   * @param entityManager
+   *          the entity manager
+   * @param entity
+   *          the entity to marshal
+   * @param intent
+   *          the intent or purpose of marshalling. Marshalling process varies slightly depending on
+   *          the purpose. For example, if the purpose if INSERT or UPSERT, the marshaller would
+   *          auto generate any keys. Where as if the purpose is UPDATE, then then marshaller will
+   *          NOT generate any keys.
    * @return the marshaled object
    */
   @SuppressWarnings("rawtypes")
   public static BaseEntity marshal(DefaultEntityManager entityManager, Object entity,
-      Intent intent) {
-    Marshaller marshaller = new Marshaller(entityManager, entity, intent);
+                                   Intent intent) {
+    Marshaller marshaller = new Marshaller(entityManager, entity, intent, null);
     return marshaller.marshal();
   }
 
@@ -240,10 +265,12 @@ public class Marshaller {
    *          the entity manager.
    * @param entity
    *          the entity from which key is to be extracted
+   * @param entityType
+   *          the entity type
    * @return extracted key.
    */
-  public static Key marshalKey(DefaultEntityManager entityManager, Object entity) {
-    Marshaller marshaller = new Marshaller(entityManager, entity, Intent.DELETE);
+  public static Key marshalKey(DefaultEntityManager entityManager, Object entity, Type entityType) {
+    Marshaller marshaller = new Marshaller(entityManager, entity, Intent.DELETE, entityType);
     marshaller.marshalKey();
     return (Key) marshaller.key;
   }

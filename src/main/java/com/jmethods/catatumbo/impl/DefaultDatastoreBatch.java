@@ -16,6 +16,7 @@
 
 package com.jmethods.catatumbo.impl;
 
+import java.lang.reflect.Type;
 import java.util.List;
 
 import com.google.cloud.datastore.Batch;
@@ -87,20 +88,35 @@ public class DefaultDatastoreBatch implements DatastoreBatch {
 
   @Override
   public <E> E insert(E entity) {
-    return writer.insert(entity);
+    return insert(entity, null);
+  }
+
+  @Override
+  public <E> E insert(E entity, Type entityType) {
+    return writer.insert(entity, entityType);
   }
 
   @Override
   public <E> List<E> insert(List<E> entities) {
-    return writer.insert(entities);
+    return insert(entities, null);
+  }
+
+  @Override
+  public <E> List<E> insert(List<E> entities, Type entityType) {
+    return writer.insert(entities, entityType);
   }
 
   @Override
   public <E> void insertWithDeferredIdAllocation(E entity) {
+    insertWithDeferredIdAllocation(entity, null);
+  }
+
+  @Override
+  public <E> void insertWithDeferredIdAllocation(E entity, Type entityType) {
     try {
-      DatastoreUtils.validateDeferredIdAllocation(entity);
+      DatastoreUtils.validateDeferredIdAllocation(entity, entityType);
       FullEntity<?> nativeEntity = (FullEntity<?>) Marshaller.marshal(entityManager, entity,
-          Intent.INSERT);
+              Intent.INSERT, entityType);
       nativeBatch.addWithDeferredIdAllocation(nativeEntity);
     } catch (DatastoreException exp) {
       throw DatastoreUtils.wrap(exp);
@@ -109,13 +125,18 @@ public class DefaultDatastoreBatch implements DatastoreBatch {
 
   @Override
   public <E> void insertWithDeferredIdAllocation(List<E> entities) {
+    insertWithDeferredIdAllocation(entities, null);
+  }
+
+  @Override
+  public <E> void insertWithDeferredIdAllocation(List<E> entities, Type entityType) {
     if (entities == null || entities.isEmpty()) {
       return;
     }
     try {
-      DatastoreUtils.validateDeferredIdAllocation(entities.get(0));
+      DatastoreUtils.validateDeferredIdAllocation(entities.get(0), entityType);
       FullEntity<?>[] nativeEntities = DatastoreUtils.toNativeFullEntities(entities, entityManager,
-          Intent.INSERT);
+          Intent.INSERT, entityType);
       nativeBatch.addWithDeferredIdAllocation(nativeEntities);
     } catch (DatastoreException exp) {
       throw DatastoreUtils.wrap(exp);
@@ -125,30 +146,55 @@ public class DefaultDatastoreBatch implements DatastoreBatch {
 
   @Override
   public <E> E update(E entity) {
-    return writer.update(entity);
+    return update(entity, null);
+  }
+
+  @Override
+  public <E> E update(E entity, Type entityType) {
+    return writer.update(entity, entityType);
   }
 
   @Override
   public <E> List<E> update(List<E> entities) {
-    return writer.update(entities);
+    return update(entities, null);
+  }
+
+  @Override
+  public <E> List<E> update(List<E> entities, Type entityType) {
+    return writer.update(entities, entityType);
   }
 
   @Override
   public <E> E upsert(E entity) {
-    return writer.upsert(entity);
+    return upsert(entity, null);
+  }
+
+  @Override
+  public <E> E upsert(E entity, Type entityType) {
+    return writer.upsert(entity, entityType);
   }
 
   @Override
   public <E> List<E> upsert(List<E> entities) {
-    return writer.upsert(entities);
+    return upsert(entities, null);
+  }
+
+  @Override
+  public <E> List<E> upsert(List<E> entities, Type entityType) {
+    return writer.upsert(entities, entityType);
   }
 
   @Override
   public <E> void upsertWithDeferredIdAllocation(E entity) {
+    upsertWithDeferredIdAllocation(entity, null);
+  }
+
+  @Override
+  public <E> void upsertWithDeferredIdAllocation(E entity, Type entityType) {
     try {
-      DatastoreUtils.validateDeferredIdAllocation(entity);
+      DatastoreUtils.validateDeferredIdAllocation(entity, entityType);
       FullEntity<?> nativeEntity = (FullEntity<?>) Marshaller.marshal(entityManager, entity,
-          Intent.UPSERT);
+              Intent.UPSERT, entityType);
       nativeBatch.putWithDeferredIdAllocation(nativeEntity);
     } catch (DatastoreException exp) {
       throw DatastoreUtils.wrap(exp);
@@ -158,13 +204,18 @@ public class DefaultDatastoreBatch implements DatastoreBatch {
 
   @Override
   public <E> void upsertWithDeferredIdAllocation(List<E> entities) {
+    upsertWithDeferredIdAllocation(entities, null);
+  }
+
+  @Override
+  public <E> void upsertWithDeferredIdAllocation(List<E> entities, Type entityType) {
     if (entities == null || entities.isEmpty()) {
       return;
     }
     try {
-      DatastoreUtils.validateDeferredIdAllocation(entities.get(0));
+      DatastoreUtils.validateDeferredIdAllocation(entities.get(0), entityType);
       FullEntity<?>[] nativeEntities = DatastoreUtils.toNativeFullEntities(entities, entityManager,
-          Intent.UPSERT);
+          Intent.UPSERT, entityType);
       nativeBatch.putWithDeferredIdAllocation(nativeEntities);
     } catch (DatastoreException exp) {
       throw DatastoreUtils.wrap(exp);
@@ -174,32 +225,42 @@ public class DefaultDatastoreBatch implements DatastoreBatch {
 
   @Override
   public void delete(Object entity) {
-    writer.delete(entity);
+    delete(entity, null);
+  }
+
+  @Override
+  public void delete(Object entity, Type entityType) {
+    writer.delete(entity, entityType);
   }
 
   @Override
   public void delete(List<?> entities) {
-    writer.delete(entities);
+    delete(entities, null);
   }
 
   @Override
-  public <E> void delete(Class<E> entityClass, long id) {
-    writer.delete(entityClass, id);
+  public void delete(List<?> entities, Type entityType) {
+    writer.delete(entities, entityType);
   }
 
   @Override
-  public <E> void delete(Class<E> entityClass, String id) {
-    writer.delete(entityClass, id);
+  public <E> void delete(Type entityType, long id) {
+    writer.delete(entityType, id);
   }
 
   @Override
-  public <E> void delete(Class<E> entityClass, DatastoreKey parentKey, long id) {
-    writer.delete(entityClass, parentKey, id);
+  public <E> void delete(Type entityType, String id) {
+    writer.delete(entityType, id);
   }
 
   @Override
-  public <E> void delete(Class<E> entityClass, DatastoreKey parentKey, String id) {
-    writer.delete(entityClass, parentKey, id);
+  public <E> void delete(Type entityType, DatastoreKey parentKey, long id) {
+    writer.delete(entityType, parentKey, id);
+  }
+
+  @Override
+  public <E> void delete(Type entityType, DatastoreKey parentKey, String id) {
+    writer.delete(entityType, parentKey, id);
   }
 
   @Override

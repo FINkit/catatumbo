@@ -17,6 +17,9 @@
 package com.jmethods.catatumbo.impl;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
 import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -70,12 +73,18 @@ public class EntityIntrospector {
   /**
    * Cache of introspected classes
    */
-  private static final Cache<Class<?>, EntityMetadata> cache = new Cache<>(64);
+  private static final Cache<Type, EntityMetadata> cache = new Cache<>(64);
 
   /**
-   * The class to introspect
+   * The type to introspect
    */
-  private final Class<?> entityClass;
+  private final Type entityType;
+
+
+  /**
+   * The raw class corresponding to the type
+   */
+  private final Class<?> rawType;
 
   /**
    * Output of the introspection, the metadata about the entity
@@ -85,11 +94,12 @@ public class EntityIntrospector {
   /**
    * Creates a new instance of <code>EntityIntrospector</code>.
    *
-   * @param entityClass
-   *          the entity class to introspect
+   * @param entityType
+   *          the entity type to introspect
    */
-  private EntityIntrospector(Class<?> entityClass) {
-    this.entityClass = entityClass;
+  private EntityIntrospector(Type entityType) {
+    this.entityType = entityType;
+    this.rawType = resolveRawType(entityType);
   }
 
   /**
@@ -99,40 +109,40 @@ public class EntityIntrospector {
    *          the entity object to introspect.
    * @return the metadata of the entity
    */
-  public static EntityMetadata introspect(Object entity) {
-    return introspect(entity.getClass());
+  public static EntityMetadata introspect(Object entity, Type entityType) {
+    return introspect(entityType != null ? entityType : entity.getClass());
   }
 
   /**
    * Introspects the given entity class and returns the metadata of the entity.
    *
-   * @param entityClass
-   *          the entity class to introspect
+   * @param entityType
+   *            the entity type to introspect
    * @return the metadata of the entity
    */
-  public static EntityMetadata introspect(Class<?> entityClass) {
-    EntityMetadata cachedMetadata = cache.get(entityClass);
+  public static EntityMetadata introspect(Type entityType) {
+    EntityMetadata cachedMetadata = cache.get(entityType);
     if (cachedMetadata != null) {
       return cachedMetadata;
     }
-    return loadMetadata(entityClass);
+    return loadMetadata(entityType);
   }
 
   /**
    * Loads the metadata for the given class and puts it in the cache and returns it.
    * 
-   * @param entityClass
-   *          the entity class
+   * @param entityType
+   *          the entity type
    * @return the metadata for the given class
    */
-  private static EntityMetadata loadMetadata(Class<?> entityClass) {
-    synchronized (entityClass) {
-      EntityMetadata metadata = cache.get(entityClass);
+  private static EntityMetadata loadMetadata(Type entityType) {
+    synchronized (entityType) {
+      EntityMetadata metadata = cache.get(entityType);
       if (metadata == null) {
-        EntityIntrospector introspector = new EntityIntrospector(entityClass);
+        EntityIntrospector introspector = new EntityIntrospector(entityType);
         introspector.process();
         metadata = introspector.entityMetadata;
-        cache.put(entityClass, metadata);
+        cache.put(entityType, metadata);
       }
       return metadata;
     }
@@ -142,31 +152,72 @@ public class EntityIntrospector {
    * Processes the entity class using reflection and builds the metadata.
    */
   private void process() {
-    Entity entity = entityClass.getAnnotation(Entity.class);
-    ProjectedEntity projectedEntity = entityClass.getAnnotation(ProjectedEntity.class);
+    Entity entity = rawType.getAnnotation(Entity.class);
+    ProjectedEntity projectedEntity = rawType.getAnnotation(ProjectedEntity.class);
     if (entity != null) {
       initEntityMetadata(entity);
     } else if (projectedEntity != null) {
       initEntityMetadata(projectedEntity);
     } else {
       String message = String.format("Class %s must either have %s or %s annotation",
-          entityClass.getName(), Entity.class.getName(), ProjectedEntity.class.getName());
+              rawType.getName(), Entity.class.getName(), ProjectedEntity.class.getName());
       throw new EntityManagerException(message);
     }
 
+    processGenericParameters();
     processPropertyOverrides();
 
     processFields();
     // If we did not find valid Identifier...
     if (entityMetadata.getIdentifierMetadata() == null) {
       throw new EntityManagerException(
-          String.format("Class %s requires a field with annotation of %s", entityClass.getName(),
+          String.format("Class %s requires a field with annotation of %s", rawType.getName(),
               Identifier.class.getName()));
     }
-    entityMetadata.setEntityListenersMetadata(EntityListenersIntrospector.introspect(entityClass));
+    entityMetadata.setEntityListenersMetadata(EntityListenersIntrospector.introspect(rawType));
     entityMetadata.ensureUniqueProperties();
     entityMetadata.cleanup();
   }
+
+  /**
+   * Resolve the raw class from a given type
+   *
+   * @param type
+   *          the type to resolve
+   * @return the raw class of the underlying type
+   */
+  private Class<?> resolveRawType(Type type) {
+    if (type instanceof Class) {
+      return (Class<?>) type;
+    } else if (type instanceof ParameterizedType) {
+      return (Class<?>) ((ParameterizedType) type).getRawType();
+    } else {
+      String message = String.format("Given type %s not supported."
+              + "Only Class and ParameterizedType are valid.", type.getTypeName());
+      throw new EntityManagerException(message);
+    }
+  }
+
+  /**
+   * Resolve the field type if generic
+   *
+   * @param field
+   *          the field to resolve
+   * @return the actual class of the field
+   */
+  private Class<?> reifyFieldType(Field field) {
+    // Resolve the field type if it's a generic parameterizedType
+    Class<?> fieldType = field.getType();
+    if (field.getGenericType() instanceof TypeVariable) {
+      Class<?> reifiedType = entityMetadata.reify((TypeVariable) field.getGenericType());
+      if (reifiedType != null) {
+        fieldType = reifiedType;
+      }
+    }
+
+    return fieldType;
+  }
+
 
   /**
    * Initializes the metadata using the given {@link Entity} annotation.
@@ -177,9 +228,9 @@ public class EntityIntrospector {
   private void initEntityMetadata(Entity entity) {
     String kind = entity.kind();
     if (kind.trim().length() == 0) {
-      kind = entityClass.getSimpleName();
+      kind = rawType.getSimpleName();
     }
-    entityMetadata = new EntityMetadata(entityClass, kind);
+    entityMetadata = new EntityMetadata(rawType, kind);
   }
 
   /**
@@ -191,17 +242,36 @@ public class EntityIntrospector {
   private void initEntityMetadata(ProjectedEntity projectedEntity) {
     String kind = projectedEntity.kind();
     if (kind.trim().length() == 0) {
-      String message = String.format("Class %s requires a non-blank Kind", entityClass.getName());
+      String message = String.format("Class %s requires a non-blank Kind", rawType.getName());
       throw new EntityManagerException(message);
     }
-    entityMetadata = new EntityMetadata(entityClass, kind, true);
+    entityMetadata = new EntityMetadata(rawType, kind, true);
+  }
+
+  /**
+   * Resolve generic parameters if a {@link ParameterizedType} was given.
+   */
+  private void processGenericParameters() {
+    if (entityType instanceof ParameterizedType) {
+      TypeVariable<? extends Class<?>>[] typeParameters = rawType.getTypeParameters();
+      Type[] reified = ((ParameterizedType) entityType).getActualTypeArguments();
+      if (typeParameters.length != reified.length) {
+        String message = String.format("ParameterizedType %s requires %d generic types",
+                entityType.getTypeName(), typeParameters.length);
+        throw new EntityManagerException(message);
+      }
+
+      for (int i = 0; i < typeParameters.length; i++) {
+        entityMetadata.putGenericType(typeParameters[i], reified[i]);
+      }
+    }
   }
 
   /**
    * Processes the property overrides for the embedded objects, if any.
    */
   private void processPropertyOverrides() {
-    PropertyOverrides propertyOverrides = entityClass.getAnnotation(PropertyOverrides.class);
+    PropertyOverrides propertyOverrides = rawType.getAnnotation(PropertyOverrides.class);
     if (propertyOverrides == null) {
       return;
     }
@@ -217,16 +287,17 @@ public class EntityIntrospector {
   private void processFields() {
     List<Field> fields = getAllFields();
     for (Field field : fields) {
+      Class<?> fieldType = reifyFieldType(field);
       if (field.isAnnotationPresent(Identifier.class)) {
-        processIdentifierField(field);
+        processIdentifierField(field, fieldType);
       } else if (field.isAnnotationPresent(Key.class)) {
-        processKeyField(field);
+        processKeyField(field, fieldType);
       } else if (field.isAnnotationPresent(ParentKey.class)) {
-        processParentKeyField(field);
+        processParentKeyField(field, fieldType);
       } else if (field.isAnnotationPresent(Embedded.class)) {
-        processEmbeddedField(field);
+        processEmbeddedField(field, fieldType);
       } else {
-        processField(field);
+        processField(field, fieldType);
       }
     }
   }
@@ -239,7 +310,7 @@ public class EntityIntrospector {
    */
   private List<Field> getAllFields() {
     List<Field> allFields = new ArrayList<>();
-    Class<?> clazz = entityClass;
+    Class<?> clazz = rawType;
     boolean stop;
     do {
       List<Field> fields = IntrospectionUtils.getPersistableFields(clazz);
@@ -255,11 +326,13 @@ public class EntityIntrospector {
    *
    * @param field
    *          the identifier field
+   * @param type
+   *          the field Type
    */
-  private void processIdentifierField(Field field) {
+  private void processIdentifierField(Field field, Class<?> type) {
     Identifier identifier = field.getAnnotation(Identifier.class);
     boolean autoGenerated = identifier.autoGenerated();
-    IdentifierMetadata identifierMetadata = new IdentifierMetadata(field, autoGenerated);
+    IdentifierMetadata identifierMetadata = new IdentifierMetadata(field, type, autoGenerated);
     entityMetadata.setIdentifierMetadata(identifierMetadata);
   }
 
@@ -268,16 +341,17 @@ public class EntityIntrospector {
    * 
    * @param field
    *          the Key field
+   * @param type
+   *          the field Type
    */
-  private void processKeyField(Field field) {
+  private void processKeyField(Field field, Class<?> type) {
     String fieldName = field.getName();
-    Class<?> type = field.getType();
     if (!type.equals(DatastoreKey.class)) {
       String message = String.format("Invalid type, %s, for Key field %s in class %s. ", type,
-          fieldName, entityClass);
+              fieldName, rawType);
       throw new EntityManagerException(message);
     }
-    KeyMetadata keyMetadata = new KeyMetadata(field);
+    KeyMetadata keyMetadata = new KeyMetadata(field, type);
     entityMetadata.setKeyMetadata(keyMetadata);
   }
 
@@ -286,16 +360,17 @@ public class EntityIntrospector {
    * 
    * @param field
    *          the ParentKey field
+   * @param type
+   *          the field type
    */
-  private void processParentKeyField(Field field) {
+  private void processParentKeyField(Field field, Class<?> type) {
     String fieldName = field.getName();
-    Class<?> type = field.getType();
     if (!type.equals(DatastoreKey.class)) {
       String message = String.format("Invalid type, %s, for ParentKey field %s in class %s. ", type,
-          fieldName, entityClass);
+              fieldName, rawType);
       throw new EntityManagerException(message);
     }
-    ParentKeyMetadata parentKeyMetadata = new ParentKeyMetadata(field);
+    ParentKeyMetadata parentKeyMetadata = new ParentKeyMetadata(field, type);
     entityMetadata.setParentKetMetadata(parentKeyMetadata);
   }
 
@@ -304,13 +379,15 @@ public class EntityIntrospector {
    *
    * @param field
    *          the field to process
+   * @param type
+   *          the field type
    */
-  private void processField(Field field) {
-    PropertyMetadata propertyMetadata = IntrospectionUtils.getPropertyMetadata(field);
+  private void processField(Field field, Class<?> type) {
+    PropertyMetadata propertyMetadata = IntrospectionUtils.getPropertyMetadata(field, type);
     if (propertyMetadata != null) {
       // If the field is from a super class, there might be some
       // overrides, so process those.
-      if (!field.getDeclaringClass().equals(entityClass)) {
+      if (!field.getDeclaringClass().equals(rawType)) {
         applyPropertyOverride(propertyMetadata);
       }
       entityMetadata.putPropertyMetadata(propertyMetadata);
@@ -335,7 +412,7 @@ public class EntityIntrospector {
     if (!long.class.equals(dataClass)) {
       String messageFormat = "Field %s in class %s must be of type %s";
       throw new EntityManagerException(String.format(messageFormat,
-          propertyMetadata.getField().getName(), entityClass, long.class));
+          propertyMetadata.getField().getName(), rawType, long.class));
     }
     entityMetadata.setVersionMetadata(propertyMetadata);
   }
@@ -373,7 +450,7 @@ public class EntityIntrospector {
     if (Collections.binarySearch(VALID_TIMESTAMP_TYPES, dataClass.getName()) < 0) {
       String messageFormat = "Field %s in class %s must be one of the following types - %s";
       throw new EntityManagerException(String.format(messageFormat,
-          propertyMetadata.getField().getName(), entityClass, VALID_TIMESTAMP_TYPES));
+          propertyMetadata.getField().getName(), rawType, VALID_TIMESTAMP_TYPES));
     }
   }
 
@@ -402,11 +479,13 @@ public class EntityIntrospector {
    * 
    * @param field
    *          the embedded field
+   * @param type
+   *          the field type
    */
-  private void processEmbeddedField(Field field) {
-    // First create EmbeddedField so we can maintain the path/depth of the
+  private void processEmbeddedField(Field field, Class<?> type) {
+    // First, create EmbeddedField so we can maintain the path/depth of the
     // embedded field
-    EmbeddedField embeddedField = new EmbeddedField(field);
+    EmbeddedField embeddedField = new EmbeddedField(field, type);
     // Introspect the embedded field.
     EmbeddedMetadata embeddedMetadata = EmbeddedIntrospector.introspect(embeddedField,
         entityMetadata);
@@ -416,13 +495,13 @@ public class EntityIntrospector {
   /**
    * Convenient method for getting the metadata of the field used for optimistic locking.
    * 
-   * @param entityClass
-   *          the entity class
+   * @param entityType
+   *          the entity type
    * @return the metadata of the field used for optimistic locking. Returns <code>null</code>, if
    *         the class does not have a field with {@link Version} annotation.
    */
-  public static PropertyMetadata getVersionMetadata(Class<?> entityClass) {
-    return introspect(entityClass).getVersionMetadata();
+  public static PropertyMetadata getVersionMetadata(Type entityType) {
+    return introspect(entityType).getVersionMetadata();
   }
 
   /**
@@ -433,8 +512,8 @@ public class EntityIntrospector {
    * @return the metadata of the field used for optimistic locking. Returns <code>null</code>, if
    *         the class does not have a field with {@link Version} annotation.
    */
-  public static PropertyMetadata getVersionMetadata(Object entity) {
-    return introspect(entity.getClass()).getVersionMetadata();
+  public static PropertyMetadata getVersionMetadata(Object entity, Type entityType) {
+    return introspect(entity, entityType).getVersionMetadata();
   }
 
   /**
@@ -444,19 +523,19 @@ public class EntityIntrospector {
    *          the entity
    * @return the Identifier Metadata
    */
-  public static IdentifierMetadata getIdentifierMetadata(Object entity) {
-    return getIdentifierMetadata(entity.getClass());
+  public static IdentifierMetadata getIdentifierMetadata(Object entity, Type entityType) {
+    return introspect(entity, entityType).getIdentifierMetadata();
   }
 
   /**
    * Returns the Identifier Metadata for the given entity class.
    * 
-   * @param entityClass
-   *          the entity class
+   * @param entityType
+   *          the entity type
    * @return the Identifier Metadata
    */
-  public static IdentifierMetadata getIdentifierMetadata(Class<?> entityClass) {
-    return introspect(entityClass).getIdentifierMetadata();
+  public static IdentifierMetadata getIdentifierMetadata(Type entityType) {
+    return introspect(entityType).getIdentifierMetadata();
 
   }
 
@@ -467,19 +546,19 @@ public class EntityIntrospector {
    *          the entity
    * @return the metadata of EntityListeners associated with the given entity.
    */
-  public static EntityListenersMetadata getEntityListenersMetadata(Object entity) {
-    return introspect(entity.getClass()).getEntityListenersMetadata();
+  public static EntityListenersMetadata getEntityListenersMetadata(Object entity, Type entityType) {
+    return introspect(entity, entityType).getEntityListenersMetadata();
   }
 
   /**
    * Returns the metadata of entity listeners associated with the given entity class.
    * 
-   * @param entityClass
-   *          the entity class
+   * @param entityType
+   *          the entity type
    * @return the metadata of entity listeners associated with the given entity class.
    */
-  public static EntityListenersMetadata getEntityListenersMetadata(Class<?> entityClass) {
-    return introspect(entityClass).getEntityListenersMetadata();
+  public static EntityListenersMetadata getEntityListenersMetadata(Type entityType) {
+    return introspect(entityType).getEntityListenersMetadata();
   }
 
 }

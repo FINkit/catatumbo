@@ -23,9 +23,13 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.awt.Button;
+import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.Objects;
 
+import com.jmethods.catatumbo.entities.Address;
+import com.jmethods.catatumbo.entities.GenericEntity;
+import com.jmethods.catatumbo.entities.GenericParameterizedType;
 import org.junit.Test;
 
 import com.jmethods.catatumbo.EntityManagerException;
@@ -65,6 +69,29 @@ import com.jmethods.catatumbo.impl.IdentifierMetadata.DataType;
  *
  */
 public class EntityIntrospectorTest {
+
+  @Test
+  public void testIntrospect_Generic() {
+    Type[] types = {Address.class, String.class};
+    EntityMetadata metadata = EntityIntrospector.introspect(GenericEntity.class, new GenericParameterizedType(types));
+    System.out.println(metadata);
+    System.out.println("************");
+    metadata = EntityIntrospector.introspect(GenericEntity.class, new GenericParameterizedType(types));
+    System.out.println(metadata);
+
+    assertEquals(metadata.reify(GenericEntity.class.getTypeParameters()[0]), types[0]);
+    assertEquals(metadata.reify(GenericEntity.class.getTypeParameters()[1]), types[1]);
+  }
+
+  @Test(expected = EntityManagerException.class)
+  public void testIntrospect_invalid_Generic_Types() {
+    EntityIntrospector.introspect(GenericEntity.class, new GenericParameterizedType(new Type[] {String.class}));
+  }
+
+  @Test(expected = EntityManagerException.class)
+  public void testIntrospect_Generic_Type_missing() {
+    EntityIntrospector.introspect(GenericEntity.class);
+  }
 
   @Test
   public void testIntrospect_Embedded() {

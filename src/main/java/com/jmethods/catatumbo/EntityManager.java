@@ -16,6 +16,7 @@
 
 package com.jmethods.catatumbo;
 
+import java.lang.reflect.Type;
 import java.util.List;
 
 /**
@@ -30,13 +31,13 @@ public interface EntityManager extends DatastoreAccess {
   /**
    * Deletes all entities of given Kind.
    * 
-   * @param entityClass
-   *          the entity class - The entity Kind will be determined from this class.
+   * @param entityType
+   *          the entity type - The entity Kind will be determined from this class.
    * @return the number of entities that were deleted
    * @throws EntityManagerException
    *           if any error occurs while deleting.
    */
-  <E> long deleteAll(Class<E> entityClass);
+  <E> long deleteAll(Type entityType);
 
   /**
    * Deletes all entities of given Kind.
@@ -121,6 +122,23 @@ public interface EntityManager extends DatastoreAccess {
   List<DatastoreKey> allocateId(List<Object> entities);
 
   /**
+   * Allocates IDs for the given entities and returns the allocated IDs. Each entity in the list
+   * must have a its identifier of type numeric (long/Long).
+   *
+   * @param entities
+   *          the entities
+   * @param entityType
+   *          the entity type
+   * @return a list of {@link DatastoreKey}s.
+   * @throws IllegalArgumentException
+   *           if any of the entities in the list do not have a numeric ID type or a valid ID is
+   *           already set.
+   * @throws EntityManagerException
+   *           if any error occurs during key allocation
+   */
+  List<DatastoreKey> allocateId(List<Object> entities, Type entityType);
+
+  /**
    * Allocates ID for the given entity and returns the allocated ID. The entity must have its
    * identifier of type numeric (long/Long).
    * 
@@ -134,5 +152,22 @@ public interface EntityManager extends DatastoreAccess {
    *           if any error occurs during ID allocation
    */
   DatastoreKey allocateId(Object entity);
+
+  /**
+   * Allocates ID for the given entity and returns the allocated ID. The entity must have its
+   * identifier of type numeric (long/Long).
+   *
+   * @param entity
+   *          the the entity.
+   * @param entityType
+   *          the entity type
+   * @return the allocated ID {@link DatastoreKey}.
+   * @throws IllegalArgumentException
+   *           if the ID type of the entity is not numeric, or if the entity has a valid ID
+   *           (non-null and non-zero).
+   * @throws EntityManagerException
+   *           if any error occurs during ID allocation
+   */
+  DatastoreKey allocateId(Object entity, Type entityType);
 
 }

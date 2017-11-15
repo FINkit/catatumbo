@@ -33,6 +33,11 @@ public class EmbeddedField {
   private Field field;
 
   /**
+   * Type of the underlying field
+   */
+  private Class<?> type;
+
+  /**
    * Parent embedded field, if any
    */
   private EmbeddedField parent;
@@ -51,7 +56,19 @@ public class EmbeddedField {
    *          the underlying field
    */
   public EmbeddedField(Field field) {
-    this(field, null);
+    this(field, null, field.getType());
+  }
+
+  /**
+   * Creates a new instance of <code>EmbeddedField</code>.
+   * 
+   * @param field
+   *            the underlying field
+   * @param type
+   *         the type of the field if need to be specified
+   */
+  public EmbeddedField(Field field, Class<?> type) {
+    this(field, null, type);
   }
 
   /**
@@ -63,14 +80,29 @@ public class EmbeddedField {
    *          the parent embedded field. May be <code>null</code>.
    */
   public EmbeddedField(Field field, EmbeddedField parent) {
+    this(field, parent, field.getType());
+  }
+
+  /**
+   * Creates a new instance of <code>EmbeddedField</code>.
+   *
+   * @param field
+   *            the underlying field
+   * @param parent
+   *            the parent embedded field. May be <code>null</code>.
+   * @param type
+   *         the type of the field if need to be specified
+   */
+  public EmbeddedField(Field field, EmbeddedField parent, Class<?> type) {
     this.field = field;
     this.parent = parent;
+    this.type = type;
     computeQualifiedName();
   }
 
   /**
    * Returns the underlying field.
-   * 
+   *
    * @return the field the underlying field.
    */
   public Field getField() {
@@ -101,7 +133,7 @@ public class EmbeddedField {
    * @return the type of this field.
    */
   public Class<?> getType() {
-    return field.getType();
+    return type;
   }
 
   /**

@@ -111,14 +111,15 @@ public class MapperFactory {
    * 
    * @param field
    *          the field
+   * @param fieldType
+   *          the field type
    * @return the mapper for the given field.
    */
-  public Mapper getMapper(Field field) {
+  public Mapper getMapper(Field field, Class<?> fieldType) {
     PropertyMapper propertyMapperAnnotation = field.getAnnotation(PropertyMapper.class);
     if (propertyMapperAnnotation != null) {
       return createCustomMapper(field, propertyMapperAnnotation);
     }
-    Class<?> fieldType = field.getType();
     if (fieldType.equals(BigDecimal.class)) {
       Decimal decimalAnnotation = field.getAnnotation(Decimal.class);
       if (decimalAnnotation != null) {
@@ -128,7 +129,10 @@ public class MapperFactory {
     if (List.class.isAssignableFrom(fieldType) || Set.class.isAssignableFrom(fieldType)) {
       return CollectionMapperFactory.getInstance().getMapper(field);
     }
-    return getMapper(field.getGenericType());
+    if (Map.class.isAssignableFrom(fieldType)) {
+      return getMapper(field.getGenericType());
+    }
+    return getMapper(fieldType);
   }
 
   /**

@@ -135,7 +135,8 @@ public class EmbeddedIntrospector {
    *          the field to process
    */
   private void processSimpleField(Field child) {
-    PropertyMetadata propertyMetadata = IntrospectionUtils.getPropertyMetadata(child);
+    PropertyMetadata propertyMetadata = IntrospectionUtils
+            .getPropertyMetadata(child, child.getType());
     if (propertyMetadata != null) {
       // Process override
       processPropertyOverride(propertyMetadata);

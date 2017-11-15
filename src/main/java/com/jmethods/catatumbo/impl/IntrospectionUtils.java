@@ -77,15 +77,17 @@ public class IntrospectionUtils {
    * 
    * @param field
    *          the field whose metadata has to be prepared
+   * @param type
+   *          the field Type
    * @return metadata of the given field.
    */
-  public static PropertyMetadata getPropertyMetadata(Field field) {
+  public static PropertyMetadata getPropertyMetadata(Field field, Class<?> type) {
     Property property = field.getAnnotation(Property.class);
     // For fields that have @Property annotation, we expect both setter and
     // getter methods. For all other fields, we only treat them as
     // persistable if we find valid getter and setter methods.
     try {
-      PropertyMetadata propertyMetadata = new PropertyMetadata(field);
+      PropertyMetadata propertyMetadata = new PropertyMetadata(field, type);
       return propertyMetadata;
     } catch (NoAccessorMethodException | NoMutatorMethodException exp) {
       if (property != null) {
@@ -101,15 +103,17 @@ public class IntrospectionUtils {
    * 
    * @param field
    *          the field
-   * 
+   * @param type
+   *          the field Type
+   *
    * @return the {@link MethodHandle} for reading the field's value
    * @throws EntityManagerException
    *           if no read method exists
    */
-  public static MethodHandle findReadMethodHandle(Field field) {
+  public static MethodHandle findReadMethodHandle(Field field, Class<?> type) {
     String readMethodName;
     MethodHandle mh = null;
-    if (boolean.class.equals(field.getType())) {
+    if (boolean.class.equals(type)) {
       readMethodName = IntrospectionUtils.getReadMethodNameForBoolean(field);
       mh = findInstanceMethod(field.getDeclaringClass(), readMethodName, field.getType());
     }
@@ -131,12 +135,14 @@ public class IntrospectionUtils {
    * 
    * @param field
    *          the field
-   * 
+   * @param type
+   *          the field Type
+   *
    * @return the {@link MethodHandle} to update the field
    * @throws NoMutatorMethodException
    *           if no matching method exists
    */
-  public static MethodHandle findWriteMethodHandle(Field field) {
+  public static MethodHandle findWriteMethodHandle(Field field, Class<?> type) {
     ConstructorMetadata constructorMetadata = ConstructorIntrospector
         .introspect(field.getDeclaringClass());
     Class<?> containerClass;
@@ -145,7 +151,7 @@ public class IntrospectionUtils {
       containerClass = constructorMetadata.getBuilderClass();
       for (String prefix : WRITE_METHOD_PREFIXES) {
         mh = findInstanceMethod(containerClass, getWriteMethodName(field, prefix), null,
-            field.getType());
+                field.getType());
         if (mh != null) {
           break;
         }

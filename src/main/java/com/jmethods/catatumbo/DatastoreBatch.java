@@ -16,6 +16,7 @@
 
 package com.jmethods.catatumbo;
 
+import java.lang.reflect.Type;
 import java.util.List;
 
 /**
@@ -42,6 +43,22 @@ public interface DatastoreBatch {
   <E> E insert(E entity);
 
   /**
+   * Adds the given entity to this batch for insertion. If the entity does not have an identifier
+   * set, ID may be automatically generated. If the same entity was added to this batch for
+   * deletion, the insert request is changed into an upsert request.
+   *
+   * @param entity
+   *          the entity to insert.
+   * @param entityType
+   *          the entity type
+   * @return the inserted entity. The inserted entity may not be same as the passed in entity. For
+   *         example, the inserted entity may contain any generated ID, key, parent key, etc.
+   * @throws EntityManagerException
+   *           if any error occurs while inserting.
+   */
+  <E> E insert(E entity, Type entityType);
+
+  /**
    * Adds the given entities to this batch for insertion. If any of the entities do not have an
    * identifier set, ID may be generated automatically. If any of entities were added to this batch
    * for deletion, the insert request is changed to an upsert request.
@@ -54,6 +71,22 @@ public interface DatastoreBatch {
    *           if any error occurs while inserting.
    */
   <E> List<E> insert(List<E> entities);
+
+  /**
+   * Adds the given entities to this batch for insertion. If any of the entities do not have an
+   * identifier set, ID may be generated automatically. If any of entities were added to this batch
+   * for deletion, the insert request is changed to an upsert request.
+   *
+   * @param entities
+   *          the entities to insert.
+   * @param entityType
+   *          the entity type
+   * @return the inserted entities. The inserted entities may not be same as the passed in entities.
+   *         For example, the inserted entities may contain generated ID, key, parent key, etc.
+   * @throws EntityManagerException
+   *           if any error occurs while inserting.
+   */
+  <E> List<E> insert(List<E> entities, Type entityType);
 
   /**
    * Adds the given entity to this batch for insertion. The ID allocation is deferred to the submit
@@ -71,6 +104,23 @@ public interface DatastoreBatch {
   <E> void insertWithDeferredIdAllocation(E entity);
 
   /**
+   * Adds the given entity to this batch for insertion. The ID allocation is deferred to the submit
+   * time of this batch. Generated keys can be retrieved using
+   * {@link DatastoreBatch.Response#getGeneratedKeys()}.This method throws
+   * {@link EntityManagerException} if the entity is using a String identifier. String identifiers
+   * are allocated at add time, instead of submit time. For entities with String identifiers, use
+   * the {@link DatastoreBatch#insert(Object)} method.
+   *
+   * @param entity
+   *          the entity to insert
+   * @param entityType
+   *          the entity type
+   * @throws EntityManagerException
+   *           if the entity has a String identifier or if any error occurs
+   */
+  <E> void insertWithDeferredIdAllocation(E entity, Type entityType);
+
+  /**
    * Adds the given entities to this batch for insertion. The ID allocation is deferred to the
    * submit time of this batch. Generated keys can be retrieved using
    * {@link DatastoreBatch.Response#getGeneratedKeys()}.This method throws
@@ -86,6 +136,23 @@ public interface DatastoreBatch {
   <E> void insertWithDeferredIdAllocation(List<E> entities);
 
   /**
+   * Adds the given entities to this batch for insertion. The ID allocation is deferred to the
+   * submit time of this batch. Generated keys can be retrieved using
+   * {@link DatastoreBatch.Response#getGeneratedKeys()}.This method throws
+   * {@link EntityManagerException} if the entity is using a String identifier. String identifiers
+   * are allocated at add time, instead of submit time. For entities with String identifiers, use
+   * the {@link DatastoreBatch#insert(List)} method.
+   *
+   * @param entities
+   *          the entities to insert
+   * @param entityType
+   *          the entity type
+   * @throws EntityManagerException
+   *           if the entity have a String identifier any error occurs
+   */
+  <E> void insertWithDeferredIdAllocation(List<E> entities, Type entityType);
+
+  /**
    * Adds the given entity to this batch for update. The operation will fail if the entity with the
    * same key does not exist in the underlying Datastore. This method does not use optimistic
    * locking even if the given entity has a field with {@link Version} annotation.
@@ -97,6 +164,21 @@ public interface DatastoreBatch {
    *           if any error occurs while updating.
    */
   <E> E update(E entity);
+
+  /**
+   * Adds the given entity to this batch for update. The operation will fail if the entity with the
+   * same key does not exist in the underlying Datastore. This method does not use optimistic
+   * locking even if the given entity has a field with {@link Version} annotation.
+   *
+   * @param entity
+   *          the entity to update
+   * @param entityType
+   *          the entity type
+   * @return the updated entity.
+   * @throws EntityManagerException
+   *           if any error occurs while updating.
+   */
+  <E> E update(E entity, Type entityType);
 
   /**
    * Adds the given entities to this batch for update. The operation will fail if the entities with
@@ -113,6 +195,22 @@ public interface DatastoreBatch {
   <E> List<E> update(List<E> entities);
 
   /**
+   * Adds the given entities to this batch for update. The operation will fail if the entities with
+   * the same key do not already exist in the underlying datastore. This method does not use
+   * optimistic locking even if the given entity has a field with {@link Version} annotation.
+   *
+   *
+   * @param entities
+   *          the entities to update.
+   * @param entityType
+   *          the entity type
+   * @return the updated entities
+   * @throws EntityManagerException
+   *           if any error occurs while inserting.
+   */
+  <E> List<E> update(List<E> entities, Type entityType);
+
+  /**
    * Adds the given entity to this batch for update or insert. Any prior writes to this entity in
    * this batch will be removed from this batch. If the entity does not have an ID set, ID may be
    * generated automatically.
@@ -126,6 +224,21 @@ public interface DatastoreBatch {
   <E> E upsert(E entity);
 
   /**
+   * Adds the given entity to this batch for update or insert. Any prior writes to this entity in
+   * this batch will be removed from this batch. If the entity does not have an ID set, ID may be
+   * generated automatically.
+   *
+   * @param entity
+   *          the entity to update or insert
+   * @param entityType
+   *          the entity type
+   * @return the updated/inserted entity.
+   * @throws EntityManagerException
+   *           if any error occurs while saving.
+   */
+  <E> E upsert(E entity, Type entityType);
+
+  /**
    * Adds the given entities to this batch for update or insert. Any prior writes of any of the
    * entities will be removed from this batch. If any of the entities do not have their IDs set, IDs
    * may be generated automatically.
@@ -137,6 +250,21 @@ public interface DatastoreBatch {
    *           if any error occurs while saving.
    */
   <E> List<E> upsert(List<E> entities);
+
+  /**
+   * Adds the given entities to this batch for update or insert. Any prior writes of any of the
+   * entities will be removed from this batch. If any of the entities do not have their IDs set, IDs
+   * may be generated automatically.
+   *
+   * @param entities
+   *          the entities to update/or insert.
+   * @param entityType
+   *          the entity type
+   * @return the updated or inserted entities
+   * @throws EntityManagerException
+   *           if any error occurs while saving.
+   */
+  <E> List<E> upsert(List<E> entities, Type entityType);
 
   /**
    * Adds the given entity to this batch for insert or update. The ID (for numeric ID) allocation
@@ -153,6 +281,22 @@ public interface DatastoreBatch {
   <E> void upsertWithDeferredIdAllocation(E entity);
 
   /**
+   * Adds the given entity to this batch for insert or update. The ID (for numeric ID) allocation
+   * will be deferred to the submit time of this batch. This method throws an
+   * {@link EntityManagerException} if the entity is using a String ID. Entity with String ID should
+   * use {@link DatastoreBatch#upsert(Object)} method.
+   *
+   * @param entity
+   *          the entity to update or insert
+   * @param entityType
+   *          the entity type
+   * @throws EntityManagerException
+   *           if the entity has a String ID or any other error occurs while accessing the
+   *           underlying datastore.
+   */
+  <E> void upsertWithDeferredIdAllocation(E entity, Type entityType);
+
+  /**
    * Adds the given entities to this batch for update or insert. The ID (for numeric ID) allocation
    * will be deferred to the submit time of this batch. This method throws an
    * {@link EntityManagerException} if the entities have String identifiers. Entities with String
@@ -167,6 +311,22 @@ public interface DatastoreBatch {
   <E> void upsertWithDeferredIdAllocation(List<E> entities);
 
   /**
+   * Adds the given entities to this batch for update or insert. The ID (for numeric ID) allocation
+   * will be deferred to the submit time of this batch. This method throws an
+   * {@link EntityManagerException} if the entities have String identifiers. Entities with String
+   * identifiers should use {@link DatastoreBatch#upsert(List)} method.
+   *
+   * @param entities
+   *          the entities to update or insert
+   * @param entityType
+   *          the entity type
+   * @throws EntityManagerException
+   *           if the entities have String identifiers or any other error occurs while accessing the
+   *           underlying datastore.
+   */
+  <E> void upsertWithDeferredIdAllocation(List<E> entities, Type entityType);
+
+  /**
    * Adds the given entity to this batch for deletion.
    * 
    * @param entity
@@ -175,6 +335,18 @@ public interface DatastoreBatch {
    *           if any error occurs while deleting.
    */
   void delete(Object entity);
+
+  /**
+   * Adds the given entity to this batch for deletion.
+   *
+   * @param entity
+   *          the entity to delete.
+   * @param entityType
+   *          the entity type
+   * @throws EntityManagerException
+   *           if any error occurs while deleting.
+   */
+  void delete(Object entity, Type entityType);
 
   /**
    * Adds the given entities to this batch for deletion.
@@ -187,34 +359,46 @@ public interface DatastoreBatch {
   void delete(List<?> entities);
 
   /**
-   * Adds the given ID and entity type to this batch for deletion.
-   * 
-   * @param entityClass
-   *          the entity class.
-   * @param id
-   *          the ID of the entity.
+   * Adds the given entities to this batch for deletion.
+   *
+   * @param entities
+   *          the entities to delete.
+   * @param entityType
+   *          the entity type
    * @throws EntityManagerException
-   *           if any error occurs while inserting.
+   *           if any error occurs while deleting.
    */
-  <E> void delete(Class<E> entityClass, long id);
+  void delete(List<?> entities, Type entityType);
 
   /**
    * Adds the given ID and entity type to this batch for deletion.
    * 
-   * @param entityClass
-   *          the entity class.
+   * @param entityType
+   *          the entity type.
    * @param id
    *          the ID of the entity.
    * @throws EntityManagerException
    *           if any error occurs while inserting.
    */
-  <E> void delete(Class<E> entityClass, String id);
+  <E> void delete(Type entityType, long id);
+
+  /**
+   * Adds the given ID and entity type to this batch for deletion.
+   * 
+   * @param entityType
+   *          the entity type.
+   * @param id
+   *          the ID of the entity.
+   * @throws EntityManagerException
+   *           if any error occurs while inserting.
+   */
+  <E> void delete(Type entityType, String id);
 
   /**
    * Adds the given entity type, parent key and ID to this batch for deletion.
    * 
-   * @param entityClass
-   *          the entity class.
+   * @param entityType
+   *          the entity type.
    * @param parentKey
    *          the parent key
    * @param id
@@ -222,13 +406,13 @@ public interface DatastoreBatch {
    * @throws EntityManagerException
    *           if any error occurs while inserting.
    */
-  <E> void delete(Class<E> entityClass, DatastoreKey parentKey, long id);
+  <E> void delete(Type entityType, DatastoreKey parentKey, long id);
 
   /**
    * Adds the given entity type, parent key and ID to this batch for deletion.
    * 
-   * @param entityClass
-   *          the entity class.
+   * @param entityType
+   *          the entity type.
    * @param parentKey
    *          the parent key
    * @param id
@@ -236,7 +420,7 @@ public interface DatastoreBatch {
    * @throws EntityManagerException
    *           if any error occurs while inserting.
    */
-  <E> void delete(Class<E> entityClass, DatastoreKey parentKey, String id);
+  <E> void delete(Type entityType, DatastoreKey parentKey, String id);
 
   /**
    * Adds the given key to this batch for deletion.
@@ -250,7 +434,7 @@ public interface DatastoreBatch {
 
   /**
    * Adds the given keys to this batch for deletion.
-   * 
+   *
    * @param keys
    *          the keys to delete
    * @throws EntityManagerException

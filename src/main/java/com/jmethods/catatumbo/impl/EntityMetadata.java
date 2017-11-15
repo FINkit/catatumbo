@@ -17,7 +17,10 @@
 package com.jmethods.catatumbo.impl;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import com.jmethods.catatumbo.CreatedTimestamp;
@@ -104,6 +107,11 @@ public class EntityMetadata extends MetadataBase {
   private EntityListenersMetadata entityListenersMetadata;
 
   /**
+   * Mapping of potential type parameters and their concrete type
+   */
+  private Map<TypeVariable<?>, Type> genericTypes;
+
+  /**
    * Creates a new instance of <code>EntityMetadata</code>.
    *
    * @param entityClass
@@ -132,6 +140,7 @@ public class EntityMetadata extends MetadataBase {
     this.projectedEntity = projectedEntity;
     propertyOverrideMap = new HashMap<>();
     masterPropertyMetadataMap = new HashMap<>();
+    genericTypes = new LinkedHashMap<>();
   }
 
   /**
@@ -357,6 +366,14 @@ public class EntityMetadata extends MetadataBase {
           String.format(message, mappedName, entityClass.getName(), old, qualifiedName));
     }
 
+  }
+
+  public Class<?> reify(TypeVariable<?> typeParameter) {
+    return (Class<?>) genericTypes.get(typeParameter);
+  }
+
+  public void putGenericType(TypeVariable<?> typeParameter, Type concreteType) {
+    genericTypes.put(typeParameter, concreteType);
   }
 
   /**

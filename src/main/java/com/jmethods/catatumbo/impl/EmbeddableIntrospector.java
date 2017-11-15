@@ -99,7 +99,8 @@ public class EmbeddableIntrospector {
    *          the field to process
    */
   private void processSimpleField(Field field) {
-    PropertyMetadata propertyMetadata = IntrospectionUtils.getPropertyMetadata(field);
+    PropertyMetadata propertyMetadata = IntrospectionUtils
+            .getPropertyMetadata(field, field.getType());
     if (propertyMetadata != null) {
       metadata.putPropertyMetadata(propertyMetadata);
     }
@@ -122,7 +123,8 @@ public class EmbeddableIntrospector {
     }
     boolean indexed = embeddedAnnotation.indexed();
     boolean optional = embeddedAnnotation.optional();
-    PropertyMetadata propertyMetadata = new PropertyMetadata(field, name, indexed, optional);
+    PropertyMetadata propertyMetadata = new PropertyMetadata(field, field.getType(), name,
+            indexed, optional);
     metadata.putPropertyMetadata(propertyMetadata);
   }
 

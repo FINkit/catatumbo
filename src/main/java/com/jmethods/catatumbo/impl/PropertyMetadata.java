@@ -78,9 +78,11 @@ public class PropertyMetadata extends FieldMetadata {
    *
    * @param field
    *          the field
+   * @param type
+   *          the field type
    */
-  public PropertyMetadata(Field field) {
-    super(field);
+  public PropertyMetadata(Field field, Class<?> type) {
+    super(field, type);
     String mappedName = field.getName();
     boolean indexed = true;
     boolean optional = false;
@@ -105,6 +107,8 @@ public class PropertyMetadata extends FieldMetadata {
    * 
    * @param field
    *          the field
+   * @param type
+   *          the field type
    * @param mappedName
    *          name of the property in the Datastore
    * @param indexed
@@ -112,8 +116,9 @@ public class PropertyMetadata extends FieldMetadata {
    * @param optional
    *          whether or not the property is optional
    */
-  public PropertyMetadata(Field field, String mappedName, boolean indexed, boolean optional) {
-    super(field);
+  public PropertyMetadata(Field field, Class<?> type, String mappedName, boolean indexed,
+                          boolean optional) {
+    super(field, type);
     this.mappedName = mappedName;
     this.indexed = indexed;
     setOptional(optional);
@@ -195,7 +200,7 @@ public class PropertyMetadata extends FieldMetadata {
    *          whether or not the field represented by this metadata is optional.
    */
   public void setOptional(boolean optional) {
-    if (field.getType().isPrimitive() || field.isAnnotationPresent(Version.class)
+    if (getDeclaredType().isPrimitive() || field.isAnnotationPresent(Version.class)
         || field.isAnnotationPresent(CreatedTimestamp.class)
         || field.isAnnotationPresent(UpdatedTimestamp.class)) {
       this.optional = false;
@@ -244,7 +249,7 @@ public class PropertyMetadata extends FieldMetadata {
    */
   private Mapper initializeMapper() {
     try {
-      return MapperFactory.getInstance().getMapper(field);
+      return MapperFactory.getInstance().getMapper(field, getDeclaredType());
     } catch (NoSuitableMapperException exp) {
       String message = String.format(
           "No suitable mapper found or error occurred creating a mapper for field %s in class %s",

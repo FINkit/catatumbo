@@ -16,6 +16,7 @@
 
 package com.jmethods.catatumbo.impl;
 
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -92,8 +93,8 @@ public class DefaultDatastoreReader {
    * Loads and returns the entity with the given ID. The entity is assumed to be a root entity (no
    * parent). The entity kind is determined from the supplied class.
    * 
-   * @param entityClass
-   *          the entity class
+   * @param entityType
+   *          the entity type
    * @param id
    *          the ID of the entity
    * @return the Entity object or <code>null</code>, if the the entity with the given ID does not
@@ -101,16 +102,16 @@ public class DefaultDatastoreReader {
    * @throws EntityManagerException
    *           if any error occurs while inserting.
    */
-  public <E> E load(Class<E> entityClass, long id) {
-    return load(entityClass, null, id);
+  public <E> E load(Type entityType, long id) {
+    return load(entityType, null, id);
   }
 
   /**
    * Loads and returns the entity with the given ID. The entity kind is determined from the supplied
    * class.
    * 
-   * @param entityClass
-   *          the entity class
+   * @param entityType
+   *          the entity type
    * @param parentKey
    *          the parent key of the entity.
    * @param id
@@ -120,23 +121,23 @@ public class DefaultDatastoreReader {
    * @throws EntityManagerException
    *           if any error occurs while inserting.
    */
-  public <E> E load(Class<E> entityClass, DatastoreKey parentKey, long id) {
-    EntityMetadata entityMetadata = EntityIntrospector.introspect(entityClass);
+  public <E> E load(Type entityType, DatastoreKey parentKey, long id) {
+    EntityMetadata entityMetadata = EntityIntrospector.introspect(entityType);
     Key nativeKey;
     if (parentKey == null) {
       nativeKey = entityManager.newNativeKeyFactory().setKind(entityMetadata.getKind()).newKey(id);
     } else {
       nativeKey = Key.newBuilder(parentKey.nativeKey(), entityMetadata.getKind(), id).build();
     }
-    return fetch(entityClass, nativeKey);
+    return fetch(entityType, nativeKey);
   }
 
   /**
    * Loads and returns the entity with the given ID. The entity is assumed to be a root entity (no
    * parent). The entity kind is determined from the supplied class.
    * 
-   * @param entityClass
-   *          the entity class
+   * @param entityType
+   *          the entity type
    * @param id
    *          the ID of the entity
    * @return the Entity object or <code>null</code>, if the the entity with the given ID does not
@@ -144,16 +145,16 @@ public class DefaultDatastoreReader {
    * @throws EntityManagerException
    *           if any error occurs while inserting.
    */
-  public <E> E load(Class<E> entityClass, String id) {
-    return load(entityClass, null, id);
+  public <E> E load(Type entityType, String id) {
+    return load(entityType, null, id);
   }
 
   /**
    * Loads and returns the entity with the given ID. The entity kind is determined from the supplied
    * class.
    * 
-   * @param entityClass
-   *          the entity class
+   * @param entityType
+   *          the entity type
    * @param parentKey
    *          the parent key of the entity.
    * @param id
@@ -163,21 +164,21 @@ public class DefaultDatastoreReader {
    * @throws EntityManagerException
    *           if any error occurs while inserting.
    */
-  public <E> E load(Class<E> entityClass, DatastoreKey parentKey, String id) {
-    EntityMetadata entityMetadata = EntityIntrospector.introspect(entityClass);
+  public <E> E load(Type entityType, DatastoreKey parentKey, String id) {
+    EntityMetadata entityMetadata = EntityIntrospector.introspect(entityType);
     Key nativeKey;
     if (parentKey == null) {
       nativeKey = entityManager.newNativeKeyFactory().setKind(entityMetadata.getKind()).newKey(id);
     } else {
       nativeKey = Key.newBuilder(parentKey.nativeKey(), entityMetadata.getKind(), id).build();
     }
-    return fetch(entityClass, nativeKey);
+    return fetch(entityType, nativeKey);
   }
 
   /**
    * Retrieves and returns the entity with the given key.
    * 
-   * @param entityClass
+   * @param entityType
    *          the expected result type
    * @param key
    *          the entity key
@@ -186,16 +187,16 @@ public class DefaultDatastoreReader {
    * @throws EntityManagerException
    *           if any error occurs while accessing the Datastore.
    */
-  public <E> E load(Class<E> entityClass, DatastoreKey key) {
-    return fetch(entityClass, key.nativeKey());
+  public <E> E load(Type entityType, DatastoreKey key) {
+    return fetch(entityType, key.nativeKey());
   }
 
   /**
    * Loads and returns the entities with the given <b>numeric IDs</b>. The entities are assumed to
    * be a root entities (no parent). The entity kind is determined from the supplied class.
    * 
-   * @param entityClass
-   *          the entity class
+   * @param entityType
+   *          the entity type
    * @param identifiers
    *          the IDs of the entities
    * @return the list of entity objects in the same order as the given list of identifiers. If one
@@ -204,17 +205,17 @@ public class DefaultDatastoreReader {
    * @throws EntityManagerException
    *           if any error occurs while inserting.
    */
-  public <E> List<E> loadById(Class<E> entityClass, List<Long> identifiers) {
-    Key[] nativeKeys = longListToNativeKeys(entityClass, identifiers);
-    return fetch(entityClass, nativeKeys);
+  public <E> List<E> loadById(Type entityType, List<Long> identifiers) {
+    Key[] nativeKeys = longListToNativeKeys(entityType, identifiers);
+    return fetch(entityType, nativeKeys);
   }
 
   /**
    * Loads and returns the entities with the given <b>names (a.k.a String IDs)</b>. The entities are
    * assumed to be root entities (no parent). The entity kind is determined from the supplied class.
    * 
-   * @param entityClass
-   *          the entity class
+   * @param entityType
+   *          the entity type
    * @param identifiers
    *          the IDs of the entities
    * @return the list of entity objects in the same order as the given list of identifiers. If one
@@ -223,16 +224,16 @@ public class DefaultDatastoreReader {
    * @throws EntityManagerException
    *           if any error occurs while inserting.
    */
-  public <E> List<E> loadByName(Class<E> entityClass, List<String> identifiers) {
-    Key[] nativeKeys = stringListToNativeKeys(entityClass, identifiers);
-    return fetch(entityClass, nativeKeys);
+  public <E> List<E> loadByName(Type entityType, List<String> identifiers) {
+    Key[] nativeKeys = stringListToNativeKeys(entityType, identifiers);
+    return fetch(entityType, nativeKeys);
   }
 
   /**
    * Retrieves and returns the entities for the given keys.
    * 
-   * @param entityClass
-   *          the expected result type
+   * @param entityType
+   *          the entity type
    * @param keys
    *          the entity keys
    * @return the entities for the given keys. If one or more requested keys do not exist in the
@@ -241,26 +242,26 @@ public class DefaultDatastoreReader {
    * @throws EntityManagerException
    *           if any error occurs while accessing the Datastore.
    */
-  public <E> List<E> loadByKey(Class<E> entityClass, List<DatastoreKey> keys) {
+  public <E> List<E> loadByKey(Type entityType, List<DatastoreKey> keys) {
     Key[] nativeKeys = DatastoreUtils.toNativeKeys(keys);
-    return fetch(entityClass, nativeKeys);
+    return fetch(entityType, nativeKeys);
   }
 
   /**
    * Fetches the entity given the native key.
    * 
-   * @param entityClass
+   * @param entityType
    *          the expected result type
    * @param nativeKey
    *          the native key
    * @return the entity with the given key, or <code>null</code>, if no entity exists with the given
    *         key.
    */
-  private <E> E fetch(Class<E> entityClass, Key nativeKey) {
+  private <E> E fetch(Type entityType, Key nativeKey) {
     try {
       Entity nativeEntity = nativeReader.get(nativeKey);
-      E entity = Unmarshaller.unmarshal(nativeEntity, entityClass);
-      entityManager.executeEntityListeners(CallbackType.POST_LOAD, entity);
+      E entity = Unmarshaller.unmarshal(nativeEntity, entityType);
+      entityManager.executeEntityListeners(CallbackType.POST_LOAD, entity, entityType);
       return entity;
     } catch (DatastoreException exp) {
       throw new EntityManagerException(exp);
@@ -270,18 +271,18 @@ public class DefaultDatastoreReader {
   /**
    * Fetches a list of entities for the given native keys.
    * 
-   * @param entityClass
+   * @param entityType
    *          the expected result type
    * @param nativeKeys
    *          the native keys of the entities
    * @return the list of entities. If one or more keys do not exist, the corresponding item in the
    *         returned list will be <code>null</code>.
    */
-  private <E> List<E> fetch(Class<E> entityClass, Key[] nativeKeys) {
+  private <E> List<E> fetch(Type entityType, Key[] nativeKeys) {
     try {
       List<Entity> nativeEntities = nativeReader.fetch(nativeKeys);
-      List<E> entities = DatastoreUtils.toEntities(entityClass, nativeEntities);
-      entityManager.executeEntityListeners(CallbackType.POST_LOAD, entities);
+      List<E> entities = DatastoreUtils.toEntities(entityType, nativeEntities);
+      entityManager.executeEntityListeners(CallbackType.POST_LOAD, entities, entityType);
       return entities;
     } catch (DatastoreException exp) {
       throw new EntityManagerException(exp);
@@ -339,8 +340,8 @@ public class DefaultDatastoreReader {
    *          the entity query request
    * @return the query response
    */
-  public <E> QueryResponse<E> executeEntityQueryRequest(Class<E> expectedResultType,
-      EntityQueryRequest request) {
+  public <E> QueryResponse<E> executeEntityQueryRequest(Type expectedResultType,
+                                                        EntityQueryRequest request) {
     try {
       GqlQuery.Builder<Entity> queryBuilder = Query.newGqlQueryBuilder(ResultType.ENTITY,
           request.getQuery());
@@ -360,7 +361,7 @@ public class DefaultDatastoreReader {
       }
       response.setResults(entities);
       response.setEndCursor(new DefaultDatastoreCursor(results.getCursorAfter().toUrlSafe()));
-      entityManager.executeEntityListeners(CallbackType.POST_LOAD, entities);
+      entityManager.executeEntityListeners(CallbackType.POST_LOAD, entities, expectedResultType);
       return response;
     } catch (DatastoreException exp) {
       throw new EntityManagerException(exp);
@@ -376,7 +377,7 @@ public class DefaultDatastoreReader {
    *          the projection query request
    * @return the query response
    */
-  public <E> QueryResponse<E> executeProjectionQueryRequest(Class<E> expectedResultType,
+  public <E> QueryResponse<E> executeProjectionQueryRequest(Type expectedResultType,
       ProjectionQueryRequest request) {
     try {
       GqlQuery.Builder<ProjectionEntity> queryBuilder = Query
@@ -440,17 +441,17 @@ public class DefaultDatastoreReader {
   /**
    * Converts the given list of identifiers into an array of native Key objects.
    * 
-   * @param entityClass
+   * @param entityType
    *          the entity class to which these identifiers belong to.
    * @param identifiers
    *          the list of identifiers to convert.
    * @return an array of Key objects
    */
-  private Key[] longListToNativeKeys(Class<?> entityClass, List<Long> identifiers) {
+  private Key[] longListToNativeKeys(Type entityType, List<Long> identifiers) {
     if (identifiers == null || identifiers.isEmpty()) {
       return new Key[0];
     }
-    EntityMetadata entityMetadata = EntityIntrospector.introspect(entityClass);
+    EntityMetadata entityMetadata = EntityIntrospector.introspect(entityType);
     Key[] nativeKeys = new Key[identifiers.size()];
     KeyFactory keyFactory = entityManager.newNativeKeyFactory();
     keyFactory.setKind(entityMetadata.getKind());
@@ -463,18 +464,18 @@ public class DefaultDatastoreReader {
 
   /**
    * Converts the given list of identifiers into an array of native Key objects.
-   * 
-   * @param entityClass
+   *
+   * @param entityType
    *          the entity class to which these identifiers belong to.
    * @param identifiers
    *          the list of identifiers to convert.
    * @return an array of Key objects
    */
-  private Key[] stringListToNativeKeys(Class<?> entityClass, List<String> identifiers) {
+  private Key[] stringListToNativeKeys(Type entityType, List<String> identifiers) {
     if (identifiers == null || identifiers.isEmpty()) {
       return new Key[0];
     }
-    EntityMetadata entityMetadata = EntityIntrospector.introspect(entityClass);
+    EntityMetadata entityMetadata = EntityIntrospector.introspect(entityType);
     Key[] nativeKeys = new Key[identifiers.size()];
     KeyFactory keyFactory = entityManager.newNativeKeyFactory();
     keyFactory.setKind(entityMetadata.getKind());

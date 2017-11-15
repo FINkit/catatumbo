@@ -16,6 +16,7 @@
 
 package com.jmethods.catatumbo.impl;
 
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -63,19 +64,19 @@ class DatastoreUtils {
    * Converts the given list of native entities to a list of model objects of given type,
    * <code>entityClass</code>.
    * 
-   * @param entityClass
-   *          the entity class
+   * @param entityType
+   *          the entity type
    * @param nativeEntities
    *          native entities to convert
    * @return the list of model objects
    */
-  static <E> List<E> toEntities(Class<E> entityClass, List<Entity> nativeEntities) {
+  public static <E> List<E> toEntities(Type entityType, List<Entity> nativeEntities) {
     if (nativeEntities == null || nativeEntities.isEmpty()) {
       return new ArrayList<>();
     }
     List<E> entities = new ArrayList<>(nativeEntities.size());
     for (Entity nativeEntity : nativeEntities) {
-      E entity = Unmarshaller.unmarshal(nativeEntity, entityClass);
+      E entity = Unmarshaller.unmarshal(nativeEntity, entityType);
       entities.add(entity);
     }
     return entities;
@@ -85,17 +86,17 @@ class DatastoreUtils {
    * Converts the given array of native entities to a list of model objects of given type,
    * <code>entityClass</code>.
    * 
-   * @param entityClass
-   *          the entity class
+   * @param entityType
+   *          the entity type
    * @param nativeEntities
    *          native entities to convert
    * @return the list of model objects
    */
-  static <E> List<E> toEntities(Class<E> entityClass, Entity[] nativeEntities) {
+  public static <E> List<E> toEntities(Type entityType, Entity[] nativeEntities) {
     if (nativeEntities == null || nativeEntities.length == 0) {
       return new ArrayList<>();
     }
-    return toEntities(entityClass, Arrays.asList(nativeEntities));
+    return toEntities(entityType, Arrays.asList(nativeEntities));
   }
 
   /**
@@ -110,11 +111,11 @@ class DatastoreUtils {
    * @return the equivalent FullEntity array
    */
   static FullEntity<?>[] toNativeFullEntities(List<?> entities, DefaultEntityManager entityManager,
-      Marshaller.Intent intent) {
+      Marshaller.Intent intent, Type entityType) {
     FullEntity<?>[] nativeEntities = new FullEntity[entities.size()];
     for (int i = 0; i < entities.size(); i++) {
       nativeEntities[i] = (FullEntity<?>) Marshaller.marshal(entityManager, entities.get(i),
-          intent);
+              intent, entityType);
     }
     return nativeEntities;
   }
@@ -131,10 +132,11 @@ class DatastoreUtils {
    * @return the equivalent Entity array
    */
   static Entity[] toNativeEntities(List<?> entities, DefaultEntityManager entityManager,
-      Marshaller.Intent intent) {
+                                   Marshaller.Intent intent, Type entityType) {
     Entity[] nativeEntities = new Entity[entities.size()];
     for (int i = 0; i < entities.size(); i++) {
-      nativeEntities[i] = (Entity) Marshaller.marshal(entityManager, entities.get(i), intent);
+      nativeEntities[i] = (Entity) Marshaller.marshal(entityManager, entities.get(i),
+              intent, entityType);
     }
     return nativeEntities;
   }
@@ -213,8 +215,8 @@ class DatastoreUtils {
    * @throws EntityManagerException
    *           if the given entity does not use a numeric ID
    */
-  static void validateDeferredIdAllocation(Object entity) {
-    IdentifierMetadata identifierMetadata = EntityIntrospector.getIdentifierMetadata(entity);
+  public static void validateDeferredIdAllocation(Object entity, Type type) {
+    IdentifierMetadata identifierMetadata = EntityIntrospector.getIdentifierMetadata(entity, type);
     if (identifierMetadata.getDataType() == DataType.STRING) {
       throw new EntityManagerException(
           "Deferred ID allocation is not applicable for entities with String identifiers. ");

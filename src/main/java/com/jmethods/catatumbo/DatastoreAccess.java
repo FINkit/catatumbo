@@ -16,6 +16,7 @@
 
 package com.jmethods.catatumbo;
 
+import java.lang.reflect.Type;
 import java.util.List;
 
 /**
@@ -38,6 +39,20 @@ public interface DatastoreAccess {
   <E> E insert(E entity);
 
   /**
+   * Inserts the given entity into the Cloud Datastore.
+   *
+   * @param entity
+   *          the entity to insert
+   * @param entityType
+   *          the entity type
+   * @return the inserted entity. The inserted entity will not be same as the passed in entity. For
+   *         example, the inserted entity may contain any generated ID, key, parent key, etc.
+   * @throws EntityManagerException
+   *           if any error occurs while inserting.
+   */
+  <E> E insert(E entity, Type entityType);
+
+  /**
    * Inserts the given list of entities into the Cloud Datastore.
    * 
    * @param entities
@@ -49,6 +64,21 @@ public interface DatastoreAccess {
    *           if any error occurs while inserting.
    */
   <E> List<E> insert(List<E> entities);
+
+  /**
+   * Inserts the given list of entities into the Cloud Datastore.
+   *
+   * @param entities
+   *          the entities to insert.
+   * @param entityType
+   *          the entity type
+   * @return the inserted entities. The inserted entities will not be same as the passed in
+   *         entities. For example, the inserted entities may contain generated ID, key, parent key,
+   *         etc.
+   * @throws EntityManagerException
+   *           if any error occurs while inserting.
+   */
+  <E> List<E> insert(List<E> entities, Type entityType);
 
   /**
    * Updates the given entity in the Cloud Datastore. The passed in Entity must have its ID set for
@@ -63,6 +93,20 @@ public interface DatastoreAccess {
   <E> E update(E entity);
 
   /**
+   * Updates the given entity in the Cloud Datastore. The passed in Entity must have its ID set for
+   * the update to work.
+   *
+   * @param entity
+   *          the entity to update
+   * @param entityType
+   *          the entity type
+   * @return the updated entity.
+   * @throws EntityManagerException
+   *           if any error occurs while updating.
+   */
+  <E> E update(E entity, Type entityType);
+
+  /**
    * Updates the given list of entities in the Cloud Datastore.
    * 
    * @param entities
@@ -73,6 +117,20 @@ public interface DatastoreAccess {
    *           if any error occurs while inserting.
    */
   <E> List<E> update(List<E> entities);
+
+  /**
+   * Updates the given list of entities in the Cloud Datastore.
+   *
+   * @param entities
+   *          the entities to update. The passed in entities must have their ID set for the update
+   *          to work.
+   * @param entityType
+   *          the entity type
+   * @return the updated entities
+   * @throws EntityManagerException
+   *           if any error occurs while inserting.
+   */
+  <E> List<E> update(List<E> entities, Type entityType);
 
   /**
    * Updates or inserts the given entity in the Cloud Datastore. If the entity does not have an ID,
@@ -87,6 +145,20 @@ public interface DatastoreAccess {
   <E> E upsert(E entity);
 
   /**
+   * Updates or inserts the given entity in the Cloud Datastore. If the entity does not have an ID,
+   * it may be generated.
+   *
+   * @param entity
+   *          the entity to update or insert
+   * @param entityType
+   *          the entity type
+   * @return the updated/inserted entity.
+   * @throws EntityManagerException
+   *           if any error occurs while saving.
+   */
+  <E> E upsert(E entity, Type entityType);
+
+  /**
    * Updates or inserts the given list of entities in the Cloud Datastore. If the entities do not
    * have a valid ID, IDs may be generated.
    * 
@@ -99,6 +171,20 @@ public interface DatastoreAccess {
   <E> List<E> upsert(List<E> entities);
 
   /**
+   * Updates or inserts the given list of entities in the Cloud Datastore. If the entities do not
+   * have a valid ID, IDs may be generated.
+   *
+   * @param entities
+   *          the entities to update/or insert.
+   * @param entityType
+   *          the entity type
+   * @return the updated or inserted entities
+   * @throws EntityManagerException
+   *           if any error occurs while saving.
+   */
+  <E> List<E> upsert(List<E> entities, Type entityType);
+
+  /**
    * Deletes the given entity from the Cloud Datastore.
    * 
    * @param entity
@@ -107,6 +193,18 @@ public interface DatastoreAccess {
    *           if any error occurs while deleting.
    */
   void delete(Object entity);
+
+  /**
+   * Deletes the given entity from the Cloud Datastore.
+   *
+   * @param entity
+   *          the entity to delete. The entity must have it ID set for the deletion to succeed.
+   * @param entityType
+   *          the entity type
+   * @throws EntityManagerException
+   *           if any error occurs while deleting.
+   */
+  void delete(Object entity, Type entityType);
 
   /**
    * Deletes the given entities from the Cloud Datastore.
@@ -119,36 +217,48 @@ public interface DatastoreAccess {
   void delete(List<?> entities);
 
   /**
-   * Deletes the entity with the given ID. The entity is assumed to be a root entity (no parent).
-   * The entity kind will be determined from the supplied entity class.
-   * 
-   * @param entityClass
-   *          the entity class.
-   * @param id
-   *          the ID of the entity.
+   * Deletes the given entities from the Cloud Datastore.
+   *
+   * @param entities
+   *          the entities to delete. The entities must have it ID set for the deletion to succeed.
+   * @param entityType
+   *          the entity type
    * @throws EntityManagerException
-   *           if any error occurs while inserting.
+   *           if any error occurs while deleting.
    */
-  <E> void delete(Class<E> entityClass, long id);
+  void delete(List<?> entities, Type entityType);
 
   /**
    * Deletes the entity with the given ID. The entity is assumed to be a root entity (no parent).
    * The entity kind will be determined from the supplied entity class.
    * 
-   * @param entityClass
-   *          the entity class.
+   * @param entityType
+   *          the entity type.
    * @param id
    *          the ID of the entity.
    * @throws EntityManagerException
    *           if any error occurs while inserting.
    */
-  <E> void delete(Class<E> entityClass, String id);
+  void delete(Type entityType, long id);
+
+  /**
+   * Deletes the entity with the given ID. The entity is assumed to be a root entity (no parent).
+   * The entity kind will be determined from the supplied entity class.
+   * 
+   * @param entityType
+   *          the entity type.
+   * @param id
+   *          the ID of the entity.
+   * @throws EntityManagerException
+   *           if any error occurs while inserting.
+   */
+  void delete(Type entityType, String id);
 
   /**
    * Deletes the entity with the given ID and parent key.
    * 
-   * @param entityClass
-   *          the entity class.
+   * @param entityType
+   *          the entity type.
    * @param parentKey
    *          the parent key
    * @param id
@@ -156,21 +266,21 @@ public interface DatastoreAccess {
    * @throws EntityManagerException
    *           if any error occurs while inserting.
    */
-  <E> void delete(Class<E> entityClass, DatastoreKey parentKey, long id);
+  void delete(Type entityType, DatastoreKey parentKey, long id);
 
   /**
    * Deletes the entity with the given ID and parent key.
    * 
-   * @param entityClass
-   *          the entity class.
+   * @param entityType
+   *          the entity type.
    * @param parentKey
    *          the parent key
    * @param id
    *          the ID of the entity.
    * @throws EntityManagerException
-   *           if any error occurs while inserting.
+   *          if any error occurs while inserting.
    */
-  <E> void delete(Class<E> entityClass, DatastoreKey parentKey, String id);
+  void delete(Type entityType, DatastoreKey parentKey, String id);
 
   /**
    * Deletes an entity given its key.
@@ -196,8 +306,8 @@ public interface DatastoreAccess {
    * Loads and returns the entity with the given ID. The entity is assumed to be a root entity (no
    * parent). The entity kind is determined from the supplied class.
    * 
-   * @param entityClass
-   *          the entity class
+   * @param entityType
+   *          the entity type.
    * @param id
    *          the ID of the entity
    * @return the Entity object or <code>null</code>, if the the entity with the given ID does not
@@ -205,14 +315,14 @@ public interface DatastoreAccess {
    * @throws EntityManagerException
    *           if any error occurs while inserting.
    */
-  <E> E load(Class<E> entityClass, long id);
+  <E> E load(Type entityType, long id);
 
   /**
    * Loads and returns the entity with the given ID. The entity is assumed to be a root entity (no
    * parent). The entity kind is determined from the supplied class.
-   * 
-   * @param entityClass
-   *          the entity class
+   *
+   * @param entityType
+   *          the entity type.
    * @param id
    *          the ID of the entity
    * @return the Entity object or <code>null</code>, if the the entity with the given ID does not
@@ -220,14 +330,14 @@ public interface DatastoreAccess {
    * @throws EntityManagerException
    *           if any error occurs while inserting.
    */
-  <E> E load(Class<E> entityClass, String id);
+  <E> E load(Type entityType, String id);
 
   /**
    * Loads and returns the entity with the given ID. The entity kind is determined from the supplied
    * class.
    * 
-   * @param entityClass
-   *          the entity class
+   * @param entityType
+   *          the entity type.
    * @param parentKey
    *          the parent key of the entity.
    * @param id
@@ -237,14 +347,14 @@ public interface DatastoreAccess {
    * @throws EntityManagerException
    *           if any error occurs while inserting.
    */
-  <E> E load(Class<E> entityClass, DatastoreKey parentKey, long id);
+  <E> E load(Type entityType, DatastoreKey parentKey, long id);
 
   /**
    * Loads and returns the entity with the given ID. The entity kind is determined from the supplied
    * class.
    * 
-   * @param entityClass
-   *          the entity class
+   * @param entityType
+   *          the entity type.
    * @param parentKey
    *          the parent key of the entity.
    * @param id
@@ -254,13 +364,13 @@ public interface DatastoreAccess {
    * @throws EntityManagerException
    *           if any error occurs while inserting.
    */
-  <E> E load(Class<E> entityClass, DatastoreKey parentKey, String id);
+  <E> E load(Type entityType,  DatastoreKey parentKey, String id);
 
   /**
    * Loads and returns the entity with the given key.
    * 
-   * @param entityClass
-   *          the entity class (expected result type)
+   * @param entityType
+   *          the entity type (expected result type)
    * @param key
    *          full key of the entity
    * @return the Entity object or <code>null</code>, if the the entity with the given key does not
@@ -268,14 +378,14 @@ public interface DatastoreAccess {
    * @throws EntityManagerException
    *           if any error occurs while accessing the Cloud Datastore.
    */
-  <E> E load(Class<E> entityClass, DatastoreKey key);
+  <E> E load(Type entityType, DatastoreKey key);
 
   /**
    * Loads and returns the entities with the given <b>numeric IDs</b>. The entities are assumed to
    * be a root entities (no parent). The entity kind is determined from the supplied class.
    * 
-   * @param entityClass
-   *          the entity class
+   * @param entityType
+   *          the entity type.
    * @param identifiers
    *          the IDs of the entities
    * @return the list of entity objects in the same order as the given list of identifiers. If one
@@ -284,14 +394,14 @@ public interface DatastoreAccess {
    * @throws EntityManagerException
    *           if any error occurs while inserting.
    */
-  <E> List<E> loadById(Class<E> entityClass, List<Long> identifiers);
+  <E> List<E> loadById(Type entityType, List<Long> identifiers);
 
   /**
    * Loads and returns the entities with the given <b>names (a.k.a String IDs)</b>. The entities are
    * assumed to be root entities (no parent). The entity kind is determined from the supplied class.
    * 
-   * @param entityClass
-   *          the entity class
+   * @param entityType
+   *          the entity type.
    * @param identifiers
    *          the IDs of the entities
    * @return the list of entity objects in the same order as the given list of identifiers. If one
@@ -300,13 +410,13 @@ public interface DatastoreAccess {
    * @throws EntityManagerException
    *           if any error occurs while inserting.
    */
-  <E> List<E> loadByName(Class<E> entityClass, List<String> identifiers);
+  <E> List<E> loadByName(Type entityType, List<String> identifiers);
 
   /**
    * Loads and returns the entities for the given keys.
    * 
-   * @param entityClass
-   *          the entity class (expected result type)
+   * @param entityType
+   *          the entity type (expected result type)
    * @param keys
    *          entity keys to load
    * @return the Entity objects for the given keys. If one or more requested keys do not exist in
@@ -315,7 +425,7 @@ public interface DatastoreAccess {
    * @throws EntityManagerException
    *           if any error occurs while accessing the Cloud Datastore.
    */
-  <E> List<E> loadByKey(Class<E> entityClass, List<DatastoreKey> keys);
+  <E> List<E> loadByKey(Type entityType, List<DatastoreKey> keys);
 
   /**
    * Creates and returns a new {@link EntityQueryRequest} for the given GQL query string. The
@@ -362,7 +472,7 @@ public interface DatastoreAccess {
    *          the entity query request
    * @return the query response
    */
-  <E> QueryResponse<E> executeEntityQueryRequest(Class<E> expectedResultType,
+  <E> QueryResponse<E> executeEntityQueryRequest(Type expectedResultType,
       EntityQueryRequest request);
 
   /**
@@ -374,7 +484,7 @@ public interface DatastoreAccess {
    *          the projection query request
    * @return the query response
    */
-  <E> QueryResponse<E> executeProjectionQueryRequest(Class<E> expectedResultType,
+  <E> QueryResponse<E> executeProjectionQueryRequest(Type expectedResultType,
       ProjectionQueryRequest request);
 
   /**

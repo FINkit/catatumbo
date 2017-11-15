@@ -18,6 +18,7 @@ package com.jmethods.catatumbo.impl;
 
 import static com.jmethods.catatumbo.impl.DatastoreUtils.toNativeFullEntities;
 
+import java.lang.reflect.Type;
 import java.util.List;
 
 import com.google.cloud.datastore.Datastore;
@@ -100,10 +101,15 @@ public class DefaultDatastoreTransaction implements DatastoreTransaction {
 
   @Override
   public <E> void insertWithDeferredIdAllocation(E entity) {
+    insertWithDeferredIdAllocation(entity, null);
+  }
+
+  @Override
+  public <E> void insertWithDeferredIdAllocation(E entity, Type entityType) {
     try {
-      DatastoreUtils.validateDeferredIdAllocation(entity);
+      DatastoreUtils.validateDeferredIdAllocation(entity, entityType);
       FullEntity<?> nativeEntity = (FullEntity<?>) Marshaller.marshal(entityManager, entity,
-          Intent.INSERT);
+              Intent.INSERT, entityType);
       nativeTransaction.addWithDeferredIdAllocation(nativeEntity);
     } catch (DatastoreException exp) {
       throw DatastoreUtils.wrap(exp);
@@ -113,12 +119,18 @@ public class DefaultDatastoreTransaction implements DatastoreTransaction {
 
   @Override
   public <E> void insertWithDeferredIdAllocation(List<E> entities) {
+    insertWithDeferredIdAllocation(entities, null);
+  }
+
+  @Override
+  public <E> void insertWithDeferredIdAllocation(List<E> entities, Type entityType) {
     if (entities == null || entities.isEmpty()) {
       return;
     }
     try {
-      DatastoreUtils.validateDeferredIdAllocation(entities.get(0));
-      FullEntity<?>[] nativeEntities = toNativeFullEntities(entities, entityManager, Intent.INSERT);
+      DatastoreUtils.validateDeferredIdAllocation(entities.get(0), entityType);
+      FullEntity<?>[] nativeEntities = toNativeFullEntities(entities, entityManager,
+              Intent.INSERT, entityType);
       nativeTransaction.addWithDeferredIdAllocation(nativeEntities);
     } catch (DatastoreException exp) {
       throw DatastoreUtils.wrap(exp);
@@ -127,10 +139,15 @@ public class DefaultDatastoreTransaction implements DatastoreTransaction {
 
   @Override
   public <E> void upsertWithDeferredIdAllocation(E entity) {
+    upsertWithDeferredIdAllocation(entity, null);
+  }
+
+  @Override
+  public <E> void upsertWithDeferredIdAllocation(E entity, Type entityType) {
     try {
-      DatastoreUtils.validateDeferredIdAllocation(entity);
+      DatastoreUtils.validateDeferredIdAllocation(entity, entityType);
       FullEntity<?> nativeEntity = (FullEntity<?>) Marshaller.marshal(entityManager, entity,
-          Intent.UPSERT);
+              Intent.UPSERT, entityType);
       nativeTransaction.putWithDeferredIdAllocation(nativeEntity);
     } catch (DatastoreException exp) {
       throw DatastoreUtils.wrap(exp);
@@ -140,12 +157,18 @@ public class DefaultDatastoreTransaction implements DatastoreTransaction {
 
   @Override
   public <E> void upsertWithDeferredIdAllocation(List<E> entities) {
+    upsertWithDeferredIdAllocation(entities, null);
+  }
+
+  @Override
+  public <E> void upsertWithDeferredIdAllocation(List<E> entities, Type entityType) {
     if (entities == null || entities.isEmpty()) {
       return;
     }
     try {
-      DatastoreUtils.validateDeferredIdAllocation(entities.get(0));
-      FullEntity<?>[] nativeEntities = toNativeFullEntities(entities, entityManager, Intent.UPSERT);
+      DatastoreUtils.validateDeferredIdAllocation(entities.get(0), entityType);
+      FullEntity<?>[] nativeEntities = toNativeFullEntities(entities, entityManager,
+              Intent.UPSERT, entityType);
       nativeTransaction.putWithDeferredIdAllocation(nativeEntities);
     } catch (DatastoreException exp) {
       throw DatastoreUtils.wrap(exp);
@@ -217,62 +240,102 @@ public class DefaultDatastoreTransaction implements DatastoreTransaction {
 
   @Override
   public <E> E insert(E entity) {
-    return writer.insert(entity);
+    return insert(entity, null);
+  }
+
+  @Override
+  public <E> E insert(E entity, Type entityType) {
+    return writer.insert(entity, entityType);
   }
 
   @Override
   public <E> List<E> insert(List<E> entities) {
-    return writer.insert(entities);
+    return insert(entities, null);
+  }
+
+  @Override
+  public <E> List<E> insert(List<E> entities, Type entityType) {
+    return writer.insert(entities, entityType);
   }
 
   @Override
   public <E> E update(E entity) {
-    return writer.updateWithOptimisticLock(entity);
+    return update(entity, null);
+  }
+
+  @Override
+  public <E> E update(E entity, Type entityType) {
+    return writer.updateWithOptimisticLock(entity, entityType);
   }
 
   @Override
   public <E> List<E> update(List<E> entities) {
-    return writer.updateWithOptimisticLock(entities);
+    return update(entities, null);
+  }
+
+  @Override
+  public <E> List<E> update(List<E> entities, Type entityType) {
+    return writer.updateWithOptimisticLock(entities, entityType);
   }
 
   @Override
   public <E> E upsert(E entity) {
-    return writer.upsert(entity);
+    return upsert(entity, null);
+  }
+
+  @Override
+  public <E> E upsert(E entity, Type entityType) {
+    return writer.upsert(entity, entityType);
   }
 
   @Override
   public <E> List<E> upsert(List<E> entities) {
-    return writer.upsert(entities);
+    return upsert(entities, null);
+  }
+
+  @Override
+  public <E> List<E> upsert(List<E> entities, Type entityType) {
+    return writer.upsert(entities, entityType);
   }
 
   @Override
   public void delete(Object entity) {
-    writer.delete(entity);
+    delete(entity, null);
+  }
+
+  @Override
+  public void delete(Object entity, Type entityType) {
+    writer.delete(entity, entityType);
   }
 
   @Override
   public void delete(List<?> entities) {
-    writer.delete(entities);
+    delete(entities, null);
   }
 
   @Override
-  public <E> void delete(Class<E> entityClass, long id) {
-    writer.delete(entityClass, id);
+  public void delete(List<?> entities, Type entityType) {
+    writer.delete(entities, entityType);
   }
 
   @Override
-  public <E> void delete(Class<E> entityClass, String id) {
-    writer.delete(entityClass, id);
+  public void delete(Type entityType, long id) {
+    writer.delete(entityType, id);
   }
 
   @Override
-  public <E> void delete(Class<E> entityClass, DatastoreKey parentKey, long id) {
-    writer.delete(entityClass, parentKey, id);
+  public void delete(Type entityType, String id) {
+    writer.delete(entityType, id);
   }
 
   @Override
-  public <E> void delete(Class<E> entityClass, DatastoreKey parentKey, String id) {
-    writer.delete(entityClass, parentKey, id);
+  public void delete(Type entityType, DatastoreKey parentKey, long id) {
+    writer.delete(entityType, parentKey, id);
+  }
+
+  @Override
+  public void delete(Type entityType, DatastoreKey parentKey, String id) {
+    writer.delete(entityType, parentKey, id);
   }
 
   @Override
@@ -286,43 +349,43 @@ public class DefaultDatastoreTransaction implements DatastoreTransaction {
   }
 
   @Override
-  public <E> E load(Class<E> entityClass, long id) {
-    return reader.load(entityClass, id);
+  public <E> E load(Type entityType, long id) {
+    return reader.load(entityType, id);
   }
 
   @Override
-  public <E> E load(Class<E> entityClass, String id) {
-    return reader.load(entityClass, id);
+  public <E> E load(Type entityType, String id) {
+    return reader.load(entityType, id);
   }
 
   @Override
-  public <E> E load(Class<E> entityClass, DatastoreKey parentKey, long id) {
-    return reader.load(entityClass, parentKey, id);
+  public <E> E load(Type entityType, DatastoreKey parentKey, long id) {
+    return reader.load(entityType, parentKey, id);
   }
 
   @Override
-  public <E> E load(Class<E> entityClass, DatastoreKey parentKey, String id) {
-    return reader.load(entityClass, parentKey, id);
+  public <E> E load(Type entityType, DatastoreKey parentKey, String id) {
+    return reader.load(entityType, parentKey, id);
   }
 
   @Override
-  public <E> E load(Class<E> entityClass, DatastoreKey key) {
-    return reader.load(entityClass, key);
+  public <E> E load(Type entityType, DatastoreKey key) {
+    return reader.load(entityType, key);
   }
 
   @Override
-  public <E> List<E> loadById(Class<E> entityClass, List<Long> identifiers) {
-    return reader.loadById(entityClass, identifiers);
+  public <E> List<E> loadById(Type entityType, List<Long> identifiers) {
+    return reader.loadById(entityType, identifiers);
   }
 
   @Override
-  public <E> List<E> loadByName(Class<E> entityClass, List<String> identifiers) {
-    return reader.loadByName(entityClass, identifiers);
+  public <E> List<E> loadByKey(Type entityType, List<DatastoreKey> keys) {
+    return reader.loadByKey(entityType, keys);
   }
 
   @Override
-  public <E> List<E> loadByKey(Class<E> entityClass, List<DatastoreKey> keys) {
-    return reader.loadByKey(entityClass, keys);
+  public <E> List<E> loadByName(Type entityType, List<String> identifiers) {
+    return reader.loadByName(entityType, identifiers);
   }
 
   @Override
@@ -341,13 +404,13 @@ public class DefaultDatastoreTransaction implements DatastoreTransaction {
   }
 
   @Override
-  public <E> QueryResponse<E> executeEntityQueryRequest(Class<E> expectedResultType,
-      EntityQueryRequest request) {
+  public <E> QueryResponse<E> executeEntityQueryRequest(Type expectedResultType,
+                                                        EntityQueryRequest request) {
     return reader.executeEntityQueryRequest(expectedResultType, request);
   }
 
   @Override
-  public <E> QueryResponse<E> executeProjectionQueryRequest(Class<E> expectedResultType,
+  public <E> QueryResponse<E> executeProjectionQueryRequest(Type expectedResultType,
       ProjectionQueryRequest request) {
     return reader.executeProjectionQueryRequest(expectedResultType, request);
   }

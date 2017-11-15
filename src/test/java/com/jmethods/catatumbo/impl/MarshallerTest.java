@@ -21,6 +21,9 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import com.jmethods.catatumbo.entities.Address;
+import com.jmethods.catatumbo.entities.GenericEntity;
+import com.jmethods.catatumbo.entities.GenericParameterizedType;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -36,6 +39,8 @@ import com.jmethods.catatumbo.entities.WrappedLongObjectIdEntity;
 import com.jmethods.catatumbo.entities.WrappedStringIdEntity;
 import com.jmethods.catatumbo.impl.Marshaller.Intent;
 
+import java.lang.reflect.Type;
+
 /**
  * @author Sai Pullabhotla
  *
@@ -47,6 +52,15 @@ public class MarshallerTest {
   @BeforeClass
   public static void setUpBeforeClass() throws Exception {
     em = (DefaultEntityManager) TestUtils.getEntityManager();
+  }
+
+  @Test
+  public void testMarshal_Generic() {
+    Type[] types = {Address.class, String.class};
+    GenericEntity<Address, String> genericEntity = GenericEntity.createSampleGenericEntity1();
+    FullEntity<?> entity = (FullEntity<?>) Marshaller.marshal(em, genericEntity, Intent.INSERT, new GenericParameterizedType(types));
+    assertEquals("Stuff", entity.getString("generic"));
+    assertEquals("Omaha", entity.getString("city"));
   }
 
   @Test

@@ -30,9 +30,11 @@ public class ParentKeyMetadata extends KeyMetadata {
    * 
    * @param field
    *          the field
+   * @param type
+   *          the field type
    */
-  public ParentKeyMetadata(Field field) {
-    super(field);
+  public ParentKeyMetadata(Field field, Class<?> type) {
+    super(field, type);
   }
 
 }

@@ -17,6 +17,7 @@
 package com.jmethods.catatumbo.impl;
 
 import java.lang.invoke.MethodHandle;
+import java.lang.reflect.Type;
 import java.util.Collection;
 
 import com.google.cloud.datastore.BaseEntity;
@@ -57,12 +58,12 @@ public class Unmarshaller {
    * 
    * @param nativeEntity
    *          the native entity to unmarshal
-   * @param entityClass
+   * @param entityType
    *          the expected model type
    */
-  private Unmarshaller(BaseEntity<?> nativeEntity, Class<?> entityClass) {
+  private Unmarshaller(BaseEntity<?> nativeEntity, Type entityType) {
     this.nativeEntity = nativeEntity;
-    entityMetadata = EntityIntrospector.introspect(entityClass);
+    entityMetadata = EntityIntrospector.introspect(entityType);
 
   }
 
@@ -73,13 +74,13 @@ public class Unmarshaller {
    *          target object type
    * @param nativeEntity
    *          the native Entity
-   * @param entityClass
+   * @param entityType
    *          the target type
    * @return Object that is equivalent to the given native entity. If the given
    *         <code>datastoreEntity</code> is <code>null</code>, returns <code>null</code>.
    */
-  public static <T> T unmarshal(Entity nativeEntity, Class<T> entityClass) {
-    return unmarshalBaseEntity(nativeEntity, entityClass);
+  public static <T> T unmarshal(Entity nativeEntity, Type entityType) {
+    return unmarshalBaseEntity(nativeEntity, entityType);
   }
 
   /**
@@ -89,13 +90,13 @@ public class Unmarshaller {
    *          target object type
    * @param nativeEntity
    *          the native Entity
-   * @param entityClass
+   * @param entityType
    *          the target type
    * @return Object that is equivalent to the given native entity. If the given
    *         <code>datastoreEntity</code> is <code>null</code>, returns <code>null</code>.
    */
-  public static <T> T unmarshal(ProjectionEntity nativeEntity, Class<T> entityClass) {
-    return unmarshalBaseEntity(nativeEntity, entityClass);
+  public static <T> T unmarshal(ProjectionEntity nativeEntity, Type entityType) {
+    return unmarshalBaseEntity(nativeEntity, entityType);
   }
 
   /**
@@ -133,15 +134,15 @@ public class Unmarshaller {
    * 
    * @param nativeEntity
    *          the native entity to unmarshal
-   * @param entityClass
+   * @param entityType
    *          the target type of the model class
    * @return the model object
    */
-  private static <T> T unmarshalBaseEntity(BaseEntity<?> nativeEntity, Class<T> entityClass) {
+  private static <T> T unmarshalBaseEntity(BaseEntity<?> nativeEntity, Type entityType) {
     if (nativeEntity == null) {
       return null;
     }
-    Unmarshaller unmarshaller = new Unmarshaller(nativeEntity, entityClass);
+    Unmarshaller unmarshaller = new Unmarshaller(nativeEntity, entityType);
     return unmarshaller.unmarshal();
   }
 
