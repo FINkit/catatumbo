@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>io.finkit</groupId>
 		<artifactId>finkit-catatumbo</artifactId>
-		<version>23.10-SNAPSHOT</version>
+		<version>23-SNAPSHOT</version>
 	</parent>
 	<artifactId>catatumbo</artifactId>
 	<packaging>jar</packaging>
