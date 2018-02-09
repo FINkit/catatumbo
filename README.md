@@ -71,6 +71,18 @@ Features
 * Programmatic access to Datastore Statistics 
 * Ability to work with Local Datastore (Datastore Emulator) during development phase   
 
+FINkit fork additions
+---------------------
+
+* Support for Generic entities
+    * Most methods working with instances now accept an extra Type parameter
+    * Methods that used to take a Class as argument are now taking a more general Type instead
+    * This provides the framework more details about Generic types when working with Generic Entities
+    * For example, when working with a Document<T>, a ParameterizedType can be given to express T as a concrete class
+* Ability to override the Kind from an Embeddable
+    * A new annotation @OverrideKind can be put on an Embeddable as a mean to override the Datastore Kind of the parent Entity 
+* Upgrade of the Datastore Client Library
+
 Project's Web Site
 ------------------
 [http://catatumbo.io](http://catatumbo.io) 
